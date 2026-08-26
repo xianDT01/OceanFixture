@@ -1,0 +1,21 @@
+<section class="comparative-page">
+  <header class="breadcrumb">
+    <a routerLink="/home" aria-label="Home">&#8962;</a><span>&#8250;</span><b>Comparative &middot; 2941</b><span class="role-pill">OF - OF</span>
+    <div class="tools"><button>CHAT</button><button>NOTES</button></div>
+  </header>
+
+  <section class="page-body">
+    <div class="comparative-scroll">
+      <table class="comparison-table">
+        <thead><tr><th>NR.</th><th>REFERENCE<br><b>2941</b></th><th>ORIGINAL DATA<br><small>03/02/25</small></th><th>Carrier Beta<br><small>03/02/25 13:20</small></th><th>Carrier Gamma<br><small>03/02/25 13:24</small></th><th>Carrier Alfa<br><small>03/02/25 13:18</small></th></tr></thead>
+        <tbody>
+          @for (row of rows; track row.label; let index = $index) {
+            <tr [class.deadline-row]="row.deadline"><th>{{ row.deadline ? '' : index + 1 }}</th><td>{{ row.label }}</td><td>{{ row.original }}</td><td>{{ row.beta }}</td><td>{{ row.gamma }}</td><td>{{ row.alfa }}</td></tr>
+          }
+        </tbody>
+        <tfoot><tr><td colspan="3"></td><td><a [routerLink]="['/offers', id]">OFFER FIRM</a></td><td><a [routerLink]="['/offers', id]">OFFER FIRM</a></td><td><a [routerLink]="['/offers', id]">OFFER FIRM</a></td></tr></tfoot>
+      </table>
+    </div>
+    <div class="page-actions"><button class="secondary">REMIND</button><button class="danger">CANCEL AND ARCHIVE</button></div>
+  </section>
+</section>

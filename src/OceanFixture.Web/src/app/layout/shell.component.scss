@@ -1,0 +1,18 @@
+:host { display:block; min-height:100vh; background:#f4f4f4; color:#3e4652; }
+.topbar { position:fixed; z-index:20; inset:0 0 auto; height:108px; background:#263d6d; border-bottom:2px solid rgba(255,255,255,.42); display:flex; align-items:flex-start; justify-content:space-between; box-shadow:0 16px 0 #1d3159; }
+.brand { width:90px; height:90px; display:grid; place-items:center; }
+.brand img { width:68px; height:68px; object-fit:contain; }
+.account { position:relative; margin:20px 9px 0 0; height:43px; padding:0 10px 0 15px; display:flex; align-items:center; gap:9px; background:white; border-radius:11px; box-shadow:0 1px 3px #16264a44; color:#202b38; }
+.account button { border:0; background:transparent; cursor:pointer; color:inherit; padding:7px 4px; }
+.account svg { width:19px; height:19px; fill:none; stroke:currentColor; stroke-width:1.7; }
+.language { display:flex; align-items:center; gap:4px; }.language svg { width:15px; }
+.account-menu { position:absolute; z-index:30; top:50px; right:0; min-width:160px; padding:8px; background:#fff; border-radius:5px; box-shadow:0 5px 18px #0003; }
+.account-menu button { display:block; width:100%; text-align:left; padding:9px 12px; }.account-menu button:hover { background:#f0f4f7; }
+.sidebar { position:fixed; z-index:15; left:0; top:124px; bottom:0; width:80px; background:#209bc0; box-shadow:3px 0 8px #0002; padding-top:10px; }
+.side-link { position:relative; height:80px; display:grid; place-items:center; color:#fff; text-decoration:none; }
+.side-link svg { width:48px; height:48px; fill:none; stroke:currentColor; stroke-width:1.15; stroke-linecap:round; stroke-linejoin:round; }
+.side-link:hover,.side-link.active { background:rgba(0,0,0,.04); }
+.side-link::after { content:attr(data-title); position:absolute; left:72px; padding:6px 9px; color:white; background:#17284a; border-radius:3px; opacity:0; pointer-events:none; transform:translateX(-5px); transition:.15s; white-space:nowrap; }
+.side-link:hover::after { opacity:1; transform:translateX(0); }
+main { padding:129px 13px 12px 92px; min-height:100vh; }
+@media (max-width:700px) { .topbar{height:82px;box-shadow:0 10px 0 #1d3159}.brand{width:70px;height:70px}.brand img{width:54px;height:54px}.account{margin-top:14px}.sidebar{top:92px;width:58px}.side-link{height:61px}.side-link svg{width:37px;height:37px}main{padding:101px 8px 8px 66px} }

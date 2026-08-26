@@ -1,0 +1,6 @@
+@OceanFixture.Notification.Api_HostAddress = http://localhost:5089
+
+GET {{OceanFixture.Notification.Api_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

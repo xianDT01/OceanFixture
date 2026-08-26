@@ -1,0 +1,49 @@
+<section class="surface">
+  <header class="toolbar">
+    <span class="home">&#8962;</span><span class="chevron">&#8250;</span><b>Home</b><span class="tenant">OF - OF</span>
+    <div class="tools">
+      <label class="search">&#9906; <input [(ngModel)]="search" placeholder="Search by keywords" /><button type="button" (click)="search = ''">&times;</button></label>
+      <label class="date"><input placeholder="Search by dates" /></label>
+      <button class="filters">FILTERS <span>&#8964;</span></button>
+      <a routerLink="/offers/new">+ NEW</a>
+    </div>
+  </header>
+
+  <section class="map-frame">
+    <section class="world" [class.collapsed]="mapCollapsed">
+      <img src="assets/world-map.svg" alt="World map" />
+      <div class="stat"><b>{{ count$ | async }}</b><span>ACTIVE REFERENCES</span></div>
+      <div class="zoom"><button>+</button><button>&minus;</button></div>
+      <button class="collapse" (click)="mapCollapsed = !mapCollapsed">&#8250;</button>
+    </section>
+  </section>
+
+  <section class="board">
+    @for (lane of lanes$ | async; track lane.key; let index = $index) {
+      <div class="lane lane-{{ index }}">
+        <header><b>{{ lane.label }}</b><span>{{ lane.offers.length }}</span><i>&#8963;</i></header>
+        <div class="cards">
+          @for (offer of lane.offers; track offer.id) {
+            @if (matches(offer.customerReference + ' ' + offer.terms.commodity + ' ' + offer.terms.portOfLoading + ' ' + offer.terms.portOfDischarge)) {
+              <article>
+                <div class="summary">
+                  <div><span>Ref: {{ offer.reference }}</span><span>Date: {{ offer.createdOn | date:'dd/MM/yy' }}</span></div>
+                  <h3>{{ offer.customerReference }}</h3>
+                  <p><b>POL:</b> {{ offer.terms.portOfLoading }} <b>POD:</b> {{ offer.terms.portOfDischarge }}</p>
+                  <p><b>L/C:</b> {{ offer.terms.laycan }}</p>
+                  <p class="commodity"><b>Commodity:</b> {{ offer.terms.commodity }}</p>
+                </div>
+                <nav>
+                  <a [routerLink]="['/offers', offer.id]"><i>&#10003;</i> Cargo Order</a>
+                  @if (offer.bids.length || offer.stage !== 'CargoOrder') { <a [routerLink]="['/offers', offer.id, 'comparative']"><i>&#10003;</i> Offer Comparative Table</a> }
+                  @if (offer.stage !== 'CargoOrder') { <a [routerLink]="['/offers', offer.id]"><i>&#9875;</i> Negotiation</a> }
+                  @if (offer.stage === 'Operative' || offer.stage === 'Archive') { <a [routerLink]="['/offers', offer.id]"><i>&#10003;</i> Recap</a><a [routerLink]="['/offers', offer.id]"><i>&#9875;</i> Operative</a> }
+                </nav>
+              </article>
+            }
+          }
+        </div>
+      </div>
+    }
+  </section>
+</section>
