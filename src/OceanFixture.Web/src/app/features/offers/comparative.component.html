@@ -13,7 +13,7 @@
             <tr [class.deadline-row]="row.deadline"><th>{{ row.deadline ? '' : index + 1 }}</th><td>{{ row.label }}</td><td>{{ row.original }}</td><td>{{ row.beta }}</td><td>{{ row.gamma }}</td><td>{{ row.alfa }}</td></tr>
           }
         </tbody>
-        <tfoot><tr><td colspan="3"></td><td><a [routerLink]="['/offers', id]">OFFER FIRM</a></td><td><a [routerLink]="['/offers', id]">OFFER FIRM</a></td><td><a [routerLink]="['/offers', id]">OFFER FIRM</a></td></tr></tfoot>
+        <tfoot><tr><td colspan="3"></td><td><a [routerLink]="['/offers', id, 'negotiation']">OFFER FIRM</a></td><td><a [routerLink]="['/offers', id, 'negotiation']">OFFER FIRM</a></td><td><a [routerLink]="['/offers', id, 'negotiation']">OFFER FIRM</a></td></tr></tfoot>
       </table>
     </div>
     <div class="page-actions"><button class="secondary">REMIND</button><button class="danger">CANCEL AND ARCHIVE</button></div>
