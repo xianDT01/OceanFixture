@@ -20,6 +20,6 @@
         <button class="secondary wide" (click)="addClause('shipowner')">+ ADD CLAUSE</button>
       </aside>
     </div>
-    <div class="page-actions"><button class="secondary">SAVE DRAFT</button><button class="primary" (click)="sendCounter()">SEND COUNTER OFFER</button><button class="success">PREPARE RECAP</button></div>
+    <div class="page-actions"><button class="secondary">SAVE DRAFT</button><button class="primary" (click)="sendCounter()">SEND COUNTER OFFER</button><button class="success" [routerLink]="['/offers', id, 'recap']">PREPARE RECAP</button></div>
   </section>
 </section>
