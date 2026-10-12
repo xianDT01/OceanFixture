@@ -1,16 +1,20 @@
 <section class="recap-page">
-  <header class="breadcrumb"><a routerLink="/home">&#8962;</a><span>&#8250;</span><b>Recap &middot; 2942</b><span class="role-pill">OF - OF</span><div class="tools"><button>CHAT</button><button>DOCUMENTS</button></div></header>
-  <section class="page-body">
-    <div class="recap-title"><div><span>FIXTURE RECAP</span><h1>ALTBIO 331-25</h1><p>La Spezia (ITSPE) &rarr; Vigo (ESVGO)</p></div><div class="recap-status" [class.confirmed]="fullyConfirmed">{{ fullyConfirmed ? '✓ FULLY CONFIRMED' : 'AWAITING CONFIRMATION' }}</div></div>
-    <div class="recap-grid">
-      <section><table class="detail-table"><tbody>@for (row of rows; track row.label; let index = $index) { <tr><th>{{ index }}</th><td>{{ row.label }}</td><td>{{ row.value }}</td></tr> }</tbody></table></section>
-      <aside>
-        <div class="confirmation-card" [class.done]="chartererConfirmed"><h3>Charterer confirmation</h3><b>Charterer One</b><p>{{ chartererConfirmed ? 'Confirmed in OceanFixture' : 'Pending' }}</p>@if (!chartererConfirmed) { <button class="primary wide" (click)="confirm('charterer')">CONFIRM AS CHARTERER</button> }</div>
-        <div class="confirmation-card" [class.done]="shipownerConfirmed"><h3>Shipowner confirmation</h3><b>Carrier Alfa</b><p>{{ shipownerConfirmed ? 'Confirmed in OceanFixture' : 'Pending' }}</p>@if (!shipownerConfirmed) { <button class="primary wide" (click)="confirm('shipowner')">CONFIRM AS SHIPOWNER</button> }</div>
-        <div class="legal-note">The fixture becomes binding only after both parties confirm this exact recap in the platform.</div>
-      </aside>
-    </div>
-    <section class="recap-clauses"><h2>CHARTERER'S CLAUSES</h2>@for (clause of chartererClauses; track clause; let index = $index) { <div><b>{{ index + 19 }}</b><p>{{ clause }}</p></div> }<h2>SHIPOWNER'S CLAUSES</h2>@for (clause of shipownerClauses; track clause; let index = $index) { <div><b>{{ index + 1 }}</b><p>{{ clause }}</p></div> }</section>
-    @if (fullyConfirmed) { <div class="page-actions"><button class="success">OPEN OPERATIVE</button></div> }
-  </section>
+  <header class="breadcrumb"><a routerLink="/home" aria-label="Home">&#8962;</a><span>&#8250;</span><b>Recap &middot; {{ offer?.reference }}</b><span class="role-pill">OF - OF</span></header>
+  @if (loading) { <p role="status">Loading recap...</p> }
+  @if (error) { <p role="alert">{{ error }} <button (click)="reload()" [disabled]="saving">RELOAD</button></p> }
+  @if (offer; as current) {
+    <section class="page-body" [attr.aria-busy]="saving">
+      <div class="recap-title"><div><span>FIXTURE RECAP</span><h1>{{ current.customerReference }}</h1><p>{{ current.terms.portOfLoading }} &rarr; {{ current.terms.portOfDischarge }}</p></div><div class="recap-status" [class.confirmed]="fullyConfirmed">{{ fullyConfirmed ? 'FULLY CONFIRMED' : 'AWAITING CONFIRMATION' }}</div></div>
+      <div class="recap-grid">
+        <section><table class="detail-table"><tbody>@for (row of rows; track row.label; let index = $index) { <tr><th>{{ index }}</th><td>{{ row.label }}</td><td>{{ row.value }}</td></tr> }</tbody></table></section>
+        <aside>
+          <div class="confirmation-card" [class.done]="confirmed('charterer')"><h3>Charterer confirmation</h3><b>{{ current.terms.charterer }}</b><p>{{ confirmed('charterer') ? 'Confirmed in OceanFixture' : 'Pending' }}</p>@if (!confirmed('charterer')) { <button class="primary wide" [disabled]="saving || !canConfirm" (click)="confirm('charterer')">CONFIRM AS CHARTERER</button> }</div>
+          <div class="confirmation-card" [class.done]="confirmed('shipowner')"><h3>Shipowner confirmation</h3><p>{{ confirmed('shipowner') ? 'Confirmed in OceanFixture' : 'Pending' }}</p>@if (!confirmed('shipowner')) { <button class="primary wide" [disabled]="saving || !canConfirm" (click)="confirm('shipowner')">CONFIRM AS SHIPOWNER</button> }</div>
+          <div class="legal-note">The fixture becomes binding only after both parties confirm this exact recap in the platform.</div>
+        </aside>
+      </div>
+      <section class="recap-clauses"><h2>CHARTERER'S CLAUSES</h2>@for (clause of current.chartererClauses ?? []; track index; let index = $index) { <div><b>{{ index + 19 }}</b><p>{{ clause }}</p></div> }<h2>SHIPOWNER'S CLAUSES</h2>@for (clause of current.shipownerClauses ?? []; track index; let index = $index) { <div><b>{{ index + 1 }}</b><p>{{ clause }}</p></div> }</section>
+      <div class="page-actions"><a routerLink="/home">BACK TO DASHBOARD</a></div>
+    </section>
+  }
 </section>

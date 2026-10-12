@@ -10,7 +10,10 @@ export interface VoyageTerms {
 
 export interface CargoOffer {
   id: string; reference: number; customerReference: string; createdOn: string; stage: OfferStage;
-  terms: VoyageTerms; bids: unknown[]; selectedShipownerId?: number; counter: number; confirmations: unknown[];
+  terms: VoyageTerms; bids: unknown[]; selectedShipownerId?: number; counter: number; confirmations: RecapConfirmation[];
+  recapVersion?: string; chartererClauses?: string[]; shipownerClauses?: string[];
 }
+
+export interface RecapConfirmation { party: string; confirmedBy: string; confirmedAt: string; versionHash: string; }
 
 export interface DashboardLane { key: OfferStage; label: string; offers: CargoOffer[]; }

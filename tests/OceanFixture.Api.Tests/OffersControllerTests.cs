@@ -81,10 +81,10 @@ public sealed class OffersControllerTests
         var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
         var controller = new OffersController(store);
 
-        var first = controller.ConfirmRecap(offer.Id, new ConfirmRecapRequest("Charterer", "Alice", "v1"));
+        var first = controller.ConfirmRecap(offer.Id, new ConfirmRecapRequest("Charterer", "Alice", offer.RecapVersion));
         Assert.Equal(OfferStage.Negotiation, AssertOk<CargoOffer>(first).Stage);
 
-        var second = controller.ConfirmRecap(offer.Id, new ConfirmRecapRequest("Shipowner", "Bob", "v1"));
+        var second = controller.ConfirmRecap(offer.Id, new ConfirmRecapRequest("Shipowner", "Bob", offer.RecapVersion));
         var updated = AssertOk<CargoOffer>(second);
         Assert.Equal(OfferStage.Operative, updated.Stage);
         Assert.Equal(2, updated.Confirmations.Count);
@@ -98,6 +98,41 @@ public sealed class OffersControllerTests
     }
 
     private static OffersController CreateController() => new(new DemoStore());
+
+    [Fact]
+    public void Recap_rejects_an_outdated_version_without_recording_confirmation()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
+        var controller = new OffersController(store);
+        var version = offer.RecapVersion;
+        controller.Counter(offer.Id, offer.Terms with { Freight = 100 });
+        Assert.IsType<ConflictObjectResult>(controller.ConfirmRecap(offer.Id, new("charterer", "Alice", version)).Result);
+        Assert.Empty(offer.Confirmations);
+    }
+
+    [Theory]
+    [InlineData("broker", "Alice")]
+    [InlineData("charterer", "")]
+    public void Recap_rejects_invalid_confirmation_identity(string party, string user)
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
+        Assert.IsType<BadRequestObjectResult>(new OffersController(store).ConfirmRecap(offer.Id, new(party, user, offer.RecapVersion)).Result);
+        Assert.Empty(offer.Confirmations);
+    }
+
+    [Fact]
+    public void Counter_invalidates_previous_confirmations()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
+        var controller = new OffersController(store);
+        controller.ConfirmRecap(offer.Id, new("charterer", "Alice", offer.RecapVersion));
+        controller.Counter(offer.Id, offer.Terms with { Freight = 100 });
+        Assert.Empty(offer.Confirmations);
+        Assert.Equal(OfferStage.Negotiation, offer.Stage);
+    }
 
     private static T AssertOk<T>(ActionResult<T> result)
     {

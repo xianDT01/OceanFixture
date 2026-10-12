@@ -11,7 +11,9 @@ OceanFixture es una recreacion independiente de la plataforma estudiada, orienta
 - `OceanFixture.Storage.Api`: metadatos de documentos adjuntos.
 - `OceanFixture.Domain`: contratos y modelos de dominio compartidos.
 
-El estado actual incluye datos de demostracion en memoria. El frontend intenta usar la API principal y, si esta no esta levantada, muestra automaticamente un conjunto de datos local para poder revisar la interfaz.
+El estado actual incluye datos de demostracion en memoria. El dashboard puede mostrar datos locales si la API no esta levantada. El Recap requiere la API: muestra un error si no puede cargar o guardar, sin simular confirmaciones correctas.
+
+El Recap carga las condiciones de cada oferta y registra las confirmaciones de ambas partes para la misma version. Una contraoferta invalida las confirmaciones anteriores; una confirmacion de una version desactualizada devuelve HTTP 409. Las confirmaciones sobreviven a recargar la pagina, pero se pierden al reiniciar la API. La identidad del firmante sigue siendo de demostracion: este flujo no constituye autenticacion ni firma legal de produccion.
 
 ## Puesta en marcha
 
@@ -57,8 +59,9 @@ Sus puertos son `5101`, `5102` y `5103`, respectivamente. Cada servicio expone `
 - `GET /v1/api/offers/dashboard`
 - `GET /v1/api/offers`
 - `GET /v1/api/offers/{id}`
+- `GET /v1/api/offers/{reference}` (referencia numerica)
 - `POST /v1/api/offers`
-- `POST /v1/api/offers/{id}/firm-offer`
+- `POST /v1/api/offers/{id}/firm-offer/{shipownerId}`
 - `POST /v1/api/offers/{id}/counter`
 - `POST /v1/api/offers/{id}/recap/confirm`
 - `GET /v1/api/companies`

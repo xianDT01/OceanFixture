@@ -58,6 +58,11 @@ public sealed record RecapConfirmation(
 
 public sealed class CargoOffer
 {
+    public string RecapVersion => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+        System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
+        {
+            Reference, CustomerReference, Terms, SelectedShipownerId, ChartererClauses, ShipownerClauses
+        })));
     public Guid Id { get; init; } = Guid.NewGuid();
     public int Reference { get; init; }
     public string CustomerReference { get; set; } = "";
