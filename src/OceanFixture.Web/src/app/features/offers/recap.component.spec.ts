@@ -22,4 +22,19 @@ describe('RecapComponent', () => {
     component.confirm('shipowner');
     expect(component.fullyConfirmed).toBeTrue();
   });
+
+  it('updates the displayed status only after both confirmation buttons are clicked', () => {
+    const fixture = TestBed.createComponent(RecapComponent);
+    fixture.detectChanges();
+    const page: HTMLElement = fixture.nativeElement;
+    const buttons = page.querySelectorAll<HTMLButtonElement>('.confirmation-card button');
+    buttons[0].click();
+    fixture.detectChanges();
+    expect(page.querySelector('.recap-status')?.textContent).toContain('AWAITING CONFIRMATION');
+    expect(page.querySelectorAll('.confirmation-card button').length).toBe(1);
+    page.querySelector<HTMLButtonElement>('.confirmation-card button')!.click();
+    fixture.detectChanges();
+    expect(page.querySelector('.recap-status')?.textContent).toContain('FULLY CONFIRMED');
+    expect(page.querySelectorAll('.confirmation-card button').length).toBe(0);
+  });
 });
