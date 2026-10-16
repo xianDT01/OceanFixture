@@ -134,6 +134,50 @@ public sealed class OffersControllerTests
         Assert.Equal(OfferStage.Negotiation, offer.Stage);
     }
 
+    [Fact]
+    public void Negotiated_counter_saves_clauses_and_terms_and_invalidates_confirmation()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
+        var controller = new OffersController(store);
+        var version = offer.RecapVersion;
+        controller.ConfirmRecap(offer.Id, new("charterer", "Alice", version));
+        var updated = AssertOk(controller.SendNegotiatedCounter(offer.Id,
+            new(offer.Terms with { Freight = 120000 }, ["Charterer clause"], ["Owner clause"], version)));
+        Assert.Equal(120000, updated.Terms.Freight);
+        Assert.Equal("Charterer clause", Assert.Single(updated.ChartererClauses));
+        Assert.Equal("Owner clause", Assert.Single(updated.ShipownerClauses));
+        Assert.Empty(updated.Confirmations);
+        Assert.Equal(1, updated.Counter);
+        Assert.NotEqual(version, updated.RecapVersion);
+    }
+
+    [Fact]
+    public void Negotiated_counter_rejects_repeat_request_even_when_terms_are_unchanged()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
+        var controller = new OffersController(store);
+        var request = new NegotiatedCounterRequest(offer.Terms, ["Clause"], [], offer.RecapVersion);
+        AssertOk(controller.SendNegotiatedCounter(offer.Id, request));
+        Assert.IsType<ConflictObjectResult>(controller.SendNegotiatedCounter(offer.Id, request).Result);
+        Assert.Equal(1, offer.Counter);
+    }
+
+    [Fact]
+    public void Negotiated_counter_rejects_invalid_quantity_without_mutation()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
+        var original = offer.Terms;
+        var result = new OffersController(store).SendNegotiatedCounter(offer.Id,
+            new(original with { Quantity = 0 }, ["Invalid update"], [], offer.RecapVersion));
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Same(original, offer.Terms);
+        Assert.Empty(offer.ChartererClauses);
+        Assert.Equal(0, offer.Counter);
+    }
+
     private static T AssertOk<T>(ActionResult<T> result)
     {
         var ok = Assert.IsType<OkObjectResult>(result.Result);

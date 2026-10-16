@@ -56,6 +56,8 @@ Sus puertos son `5101`, `5102` y `5103`, respectivamente. Cada servicio expone `
 
 ## Endpoints principales
 
+La negociacion carga los datos de cada oferta desde la API y envia condiciones y clausulas con control de version. Si otra peticion cambia la oferta, el servidor rechaza el envio con HTTP 409; los cambios escritos se mantienen en pantalla. Preparar el Recap requiere enviar primero los cambios. Borradores, chat y documentos de esta pantalla siguen pendientes y sus botones estan deshabilitados. El almacenamiento y la identidad siguen siendo de demostracion.
+
 - `GET /v1/api/offers/dashboard`
 - `GET /v1/api/offers`
 - `GET /v1/api/offers/{id}`
@@ -63,6 +65,7 @@ Sus puertos son `5101`, `5102` y `5103`, respectivamente. Cada servicio expone `
 - `POST /v1/api/offers`
 - `POST /v1/api/offers/{id}/firm-offer/{shipownerId}`
 - `POST /v1/api/offers/{id}/counter`
+- `POST /v1/api/offers/{id}/negotiation/counter` (condiciones, clausulas y version)
 - `POST /v1/api/offers/{id}/recap/confirm`
 - `GET /v1/api/companies`
 

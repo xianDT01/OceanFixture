@@ -1,33 +1,80 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
+import { of, Subject, throwError } from 'rxjs';
+import { CargoOffer, VoyageTerms } from '../../core/models';
+import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
 import { NegotiationComponent } from './negotiation.component';
 
-describe('NegotiationComponent', () => {
+describe('Negotiation API workflow', () => {
+  let api: jasmine.SpyObj<OceanFixtureApiService>;
+  let offer: CargoOffer;
   beforeEach(async () => {
-    await TestBed.configureTestingModule({
-      imports: [NegotiationComponent],
-      providers: [provideRouter([]), { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: '2942' }) } } }]
-    }).compileComponents();
+    offer = { id: 'offer-id', reference: 2942, customerReference: 'API reference', createdOn: '', stage: 'Negotiation',
+      recapVersion: 'v1', bids: [], counter: 2, confirmations: [], negotiationTurn: 'Charterer',
+      chartererClauses: ['Existing clause'], shipownerClauses: [],
+      terms: { quantity: 4000, quantityUnit: 'MT', freightCurrency: 'EUR', charterer: 'Customer', commodity: 'Steel' } as VoyageTerms };
+    api = jasmine.createSpyObj('api', ['recap', 'sendCounter']);
+    api.recap.and.returnValue(of(offer));
+    await TestBed.configureTestingModule({ imports: [NegotiationComponent], providers: [provideRouter([]),
+      { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: '2942' }) } } },
+      { provide: OceanFixtureApiService, useValue: api }] }).compileComponents();
   });
 
-  it('loads the negotiation reference and complete terms', () => {
-    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
-    expect(component.id).toBe('2942');
-    expect(component.rows.length).toBe(19);
-    expect(component.chartererClauses.length).toBe(6);
+  it('renders server conditions and copies clauses without mutating server data', () => {
+    const fixture = TestBed.createComponent(NegotiationComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('h2').textContent).toBe('API reference');
+    expect(fixture.componentInstance.rows.length).toBe(19);
+    fixture.componentInstance.addClause('charterer');
+    expect(offer.chartererClauses!.length).toBe(1);
+    expect(fixture.componentInstance.hasChanges).toBeTrue();
   });
 
-  it('increments counters and changes the negotiating turn', () => {
+  it('sends edits and clauses, preserving units, and waits for the server', () => {
+    const pending = new Subject<CargoOffer>();
+    api.sendCounter.and.returnValue(pending);
     const component = TestBed.createComponent(NegotiationComponent).componentInstance;
-    component.sendCounter();
+    component.rows.find(row => row.key === 'freight')!.value = '120000';
+    component.addClause('shipowner');
+    component.sendCounter(); component.sendCounter();
+    expect(api.sendCounter).toHaveBeenCalledTimes(1);
+    const args = api.sendCounter.calls.mostRecent().args;
+    expect(args[0]).toBe('offer-id');
+    expect(args[1].freight).toBe(120000);
+    expect(args[1].freightCurrency).toBe('EUR');
+    expect(args[3]).toEqual(['New clause']);
+    expect(args[4]).toBe('v1');
+    expect(component.counter).toBe(2);
+    pending.next({ ...offer, terms: args[1], shipownerClauses: args[3], recapVersion: 'v2', counter: 3, negotiationTurn: 'Shipowner' });
     expect(component.counter).toBe(3);
     expect(component.turn).toBe('Shipowner');
+    expect(component.hasChanges).toBeFalse();
   });
 
-  it('adds clauses to the selected party', () => {
+  it('rejects invalid numbers before sending', () => {
     const component = TestBed.createComponent(NegotiationComponent).componentInstance;
-    component.addClause('shipowner');
-    expect(component.shipownerClauses.length).toBe(2);
-    expect(component.chartererClauses.length).toBe(6);
+    component.rows.find(row => row.key === 'quantity')!.value = '4,000';
+    component.sendCounter();
+    expect(api.sendCounter).not.toHaveBeenCalled();
+    expect(component.error).toContain('numeric');
+  });
+
+  it('preserves edits and counter on version conflict', () => {
+    api.sendCounter.and.returnValue(throwError(() => ({ status: 409 })));
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.rows[0].value = 'Edited customer';
+    component.sendCounter();
+    expect(component.error).toContain('Reload');
+    expect(component.rows[0].value).toBe('Edited customer');
+    expect(component.counter).toBe(2);
+    expect(component.saving).toBeFalse();
+  });
+
+  it('does not allow sending when loading fails', () => {
+    api.recap.and.returnValue(throwError(() => ({ status: 503 })));
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.sendCounter();
+    expect(component.error).toContain('Unable to load');
+    expect(api.sendCounter).not.toHaveBeenCalled();
   });
 });

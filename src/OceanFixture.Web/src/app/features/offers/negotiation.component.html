@@ -1,25 +1,30 @@
 <section class="negotiation-page">
-  <header class="breadcrumb"><a routerLink="/home">&#8962;</a><span>&#8250;</span><b>Negotiation &middot; 2942</b><span class="role-pill">OF - OF</span><div class="tools"><button>CHAT</button><button>DOCUMENTS</button></div></header>
-  <section class="page-body">
-    <div class="negotiation-head"><div><span>COUNTER {{ counter }}</span><h2>ALTBIO 331-25</h2><p>Charterer One &harr; Carrier Alfa</p></div><div class="turn-badge"><small>SHIFT</small><b>{{ turn }}</b></div></div>
+  <header class="breadcrumb"><a routerLink="/home">&#8962;</a><span>&#8250;</span><b>Negotiation &middot; {{ offer?.reference }}</b><span class="role-pill">OF - OF</span><div class="tools"><button disabled title="Not implemented yet">CHAT</button><button disabled title="Not implemented yet">DOCUMENTS</button></div></header>
+  @if (loading) { <p role="status">Loading negotiation...</p> }
+  @if (error) { <p role="alert">{{ error }} <button (click)="reload()" [disabled]="saving">RELOAD</button></p> }
+  @if (message) { <p role="status">{{ message }}</p> }
+  @if (offer; as current) {
+  <section class="page-body" [attr.aria-busy]="saving">
+    <div class="negotiation-head"><div><span>COUNTER {{ counter }}</span><h2>{{ current.customerReference }}</h2><p>{{ current.terms.charterer }}</p></div><div class="turn-badge"><small>SHIFT</small><b>{{ turn }}</b></div></div>
     <div class="negotiation-layout">
       <div>
-        <div class="reference-strip"><span>NR.</span><b>REFERENCE</b><strong>2942</strong></div>
+        <div class="reference-strip"><span>NR.</span><b>REFERENCE</b><strong>{{ current.reference }}</strong></div>
         <div class="negotiation-form">
           @for (row of rows; track row.label; let index = $index) {
-            <div class="neg-row"><b>{{ index + 1 }}</b><label>{{ row.label }}</label><div class="original-value">{{ row.original }}</div>@if (row.multiline) { <textarea [(ngModel)]="row.value"></textarea> } @else { <input [(ngModel)]="row.value" /> }</div>
+            <div class="neg-row"><b>{{ index + 1 }}</b><label [for]="row.key">{{ row.label }}</label><div class="original-value">{{ row.original }}</div>@if (row.multiline) { <textarea [id]="row.key" [(ngModel)]="row.value" [disabled]="!canSend"></textarea> } @else { <input [id]="row.key" [(ngModel)]="row.value" [disabled]="!canSend" /> }</div>
           }
         </div>
       </div>
       <aside class="clause-editor">
         <h3>CHARTERER'S CLAUSES <span>{{ chartererClauses.length }}</span></h3>
-        <div class="clause-list">@for (clause of chartererClauses; track clause; let index = $index) { <div><b>{{ index + 19 }}</b><textarea [(ngModel)]="chartererClauses[index]"></textarea></div> }</div>
-        <button class="secondary wide" (click)="addClause('charterer')">+ ADD CLAUSE</button>
+        <div class="clause-list">@for (clause of chartererClauses; track index; let index = $index) { <div><b>{{ index + 19 }}</b><textarea [(ngModel)]="chartererClauses[index]" [disabled]="!canSend" [attr.aria-label]="'Charterer clause ' + (index + 1)"></textarea></div> }</div>
+        <button class="secondary wide" [disabled]="!canSend" (click)="addClause('charterer')">+ ADD CLAUSE</button>
         <h3>SHIPOWNER'S CLAUSES <span>{{ shipownerClauses.length }}</span></h3>
-        <div class="clause-list">@for (clause of shipownerClauses; track clause; let index = $index) { <div><b>{{ index + 1 }}</b><textarea [(ngModel)]="shipownerClauses[index]"></textarea></div> }</div>
-        <button class="secondary wide" (click)="addClause('shipowner')">+ ADD CLAUSE</button>
+        <div class="clause-list">@for (clause of shipownerClauses; track index; let index = $index) { <div><b>{{ index + 1 }}</b><textarea [(ngModel)]="shipownerClauses[index]" [disabled]="!canSend" [attr.aria-label]="'Shipowner clause ' + (index + 1)"></textarea></div> }</div>
+        <button class="secondary wide" [disabled]="!canSend" (click)="addClause('shipowner')">+ ADD CLAUSE</button>
       </aside>
     </div>
-    <div class="page-actions"><button class="secondary">SAVE DRAFT</button><button class="primary" (click)="sendCounter()">SEND COUNTER OFFER</button><button class="success" [routerLink]="['/offers', id, 'recap']">PREPARE RECAP</button></div>
+    <div class="page-actions"><button class="secondary" disabled title="Not implemented yet">SAVE DRAFT</button><button class="primary" [disabled]="!canSend" (click)="sendCounter()">SEND COUNTER OFFER</button><button class="success" [disabled]="saving || loading || hasChanges" [routerLink]="['/offers', id, 'recap']" title="Send edited conditions before preparing recap">PREPARE RECAP</button></div>
   </section>
+  }
 </section>

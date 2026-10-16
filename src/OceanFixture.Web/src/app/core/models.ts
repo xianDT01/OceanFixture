@@ -11,7 +11,7 @@ export interface VoyageTerms {
 export interface CargoOffer {
   id: string; reference: number; customerReference: string; createdOn: string; stage: OfferStage;
   terms: VoyageTerms; bids: unknown[]; selectedShipownerId?: number; counter: number; confirmations: RecapConfirmation[];
-  recapVersion?: string; chartererClauses?: string[]; shipownerClauses?: string[];
+  recapVersion?: string; chartererClauses?: string[]; shipownerClauses?: string[]; negotiationTurn?: 'Charterer' | 'Shipowner';
 }
 
 export interface RecapConfirmation { party: string; confirmedBy: string; confirmedAt: string; versionHash: string; }

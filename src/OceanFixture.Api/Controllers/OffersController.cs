@@ -79,6 +79,26 @@ public sealed class OffersController(DemoStore store) : ControllerBase
         }
     }
 
+    [HttpPost("{id:guid}/negotiation/counter")]
+    public ActionResult<CargoOffer> SendNegotiatedCounter(Guid id, NegotiatedCounterRequest request)
+    {
+        lock (store)
+        {
+            var offer = store.Offers.FirstOrDefault(item => item.Id == id);
+            if (offer is null) return NotFound();
+            if (offer.Stage != OfferStage.Negotiation) return BadRequest(new { message = "The offer is not in negotiation." });
+            if (request.VersionHash != offer.RecapVersion) return Conflict(new { message = "The offer has changed. Reload before sending." });
+            if (request.Terms is null || request.Terms.Quantity <= 0 || request.Terms.Freight < 0 || request.Terms.Demurrage < 0
+                || request.ChartererClauses is null || request.ShipownerClauses is null)
+                return BadRequest(new { message = "Valid terms and clauses are required." });
+            offer.ChartererClauses.Clear();
+            offer.ChartererClauses.AddRange(request.ChartererClauses);
+            offer.ShipownerClauses.Clear();
+            offer.ShipownerClauses.AddRange(request.ShipownerClauses);
+            return Counter(id, request.Terms);
+        }
+    }
+
     [HttpPost("{id:guid}/recap/confirm")]
     public ActionResult<CargoOffer> ConfirmRecap(Guid id, ConfirmRecapRequest request)
     {
@@ -104,3 +124,4 @@ public sealed class OffersController(DemoStore store) : ControllerBase
 }
 
 public sealed record ConfirmRecapRequest(string Party, string ConfirmedBy, string VersionHash);
+public sealed record NegotiatedCounterRequest(VoyageTerms Terms, string[] ChartererClauses, string[] ShipownerClauses, string VersionHash);
