@@ -18,3 +18,5 @@ export interface RecapConfirmation { party: string; confirmedBy: string; confirm
 export interface ShipownerBid { id: string; shipownerId: number; shipownerName: string; receivedAt: string; terms: VoyageTerms; }
 
 export interface DashboardLane { key: OfferStage; label: string; offers: CargoOffer[]; }
+export interface Company { id: number; name: string; type: string; country: string; vat: string; approved: boolean; }
+export interface CreateCargoOfferRequest { customerReference: string; terms: VoyageTerms; invitedShipownerIds: number[]; }

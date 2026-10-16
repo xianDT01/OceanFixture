@@ -33,17 +33,31 @@ public sealed class OffersController(DemoStore store) : ControllerBase
         store.Offers.FirstOrDefault(offer => offer.Reference == reference) is { } offer ? Ok(offer) : NotFound();
 
     [HttpPost]
-    public ActionResult<CargoOffer> Create(CargoOffer offer)
+    public ActionResult<CargoOffer> Create(CreateCargoOfferRequest request)
     {
-        var created = new CargoOffer
+        lock (store)
         {
-            Reference = store.Offers.Max(item => item.Reference) + 1,
-            CustomerReference = offer.CustomerReference,
-            Terms = offer.Terms,
-            InvitedShipownerIds = offer.InvitedShipownerIds
-        };
-        store.Offers.Add(created);
-        return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+            var terms = request.Terms;
+            if (string.IsNullOrWhiteSpace(request.CustomerReference) || terms is null
+                || string.IsNullOrWhiteSpace(terms.Charterer) || string.IsNullOrWhiteSpace(terms.Commodity)
+                || string.IsNullOrWhiteSpace(terms.PortOfLoading) || string.IsNullOrWhiteSpace(terms.PortOfDischarge)
+                || string.IsNullOrWhiteSpace(terms.Laycan) || string.IsNullOrWhiteSpace(terms.QuantityUnit)
+                || terms.Quantity <= 0 || terms.Freight < 0 || terms.Demurrage < 0)
+                return BadRequest(new { message = "Reference, charterer, cargo, positive quantity, ports and laycan are required. Amounts cannot be negative." });
+            if (request.InvitedShipownerIds is null || request.InvitedShipownerIds.Length == 0
+                || request.InvitedShipownerIds.Any(id => !store.Companies.Any(company =>
+                    company.Id == id && company.Type == "Shipowner" && company.Approved)))
+                return BadRequest(new { message = "Select at least one approved shipowner from the company catalog." });
+            var created = new CargoOffer
+            {
+                Reference = store.Offers.Select(item => item.Reference).DefaultIfEmpty(0).Max() + 1,
+                CustomerReference = request.CustomerReference.Trim(),
+                Terms = terms,
+                InvitedShipownerIds = request.InvitedShipownerIds.Distinct().ToList()
+            };
+            store.Offers.Add(created);
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+        }
     }
 
     [HttpPost("{id:guid}/firm-offer/{shipownerId:int}")]
@@ -128,5 +142,6 @@ public sealed class OffersController(DemoStore store) : ControllerBase
 }
 
 public sealed record ConfirmRecapRequest(string Party, string ConfirmedBy, string VersionHash);
+public sealed record CreateCargoOfferRequest(string CustomerReference, VoyageTerms Terms, int[] InvitedShipownerIds);
 public sealed record SelectFirmOfferRequest(string VersionHash);
 public sealed record NegotiatedCounterRequest(VoyageTerms Terms, string[] ChartererClauses, string[] ShipownerClauses, string VersionHash);

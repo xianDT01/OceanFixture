@@ -1,57 +1,58 @@
 <section class="workspace">
   <header class="breadcrumb"><a routerLink="/home" aria-label="Home">&#8962;</a><span>&#8250;</span><b>{{ isNew ? 'New offer' : 'Offer workspace' }}</b></header>
-
+  @if (error) { <p role="alert">{{ error }} @if (isNew) { <button (click)="loadOwners()" [disabled]="saving">RELOAD SHIPOWNERS</button> }</p> }
   @if (isNew) {
     <div class="wizard">
       <div class="wizard-step" [class.active]="step === 1" [class.done]="step > 1"><b>1</b><span>Fill In</span></div>
       <div class="wizard-step" [class.active]="step === 2" [class.done]="step > 2"><b>2</b><span>Select Shipowners</span></div>
       <div class="wizard-step" [class.active]="step === 3"><b>3</b><span>Confirm</span></div>
     </div>
-
-    <section class="page-body">
+    <section class="page-body" [attr.aria-busy]="saving">
+      @if (offer; as created) { <p role="status">Cargo order {{ created.reference }} created. <a [routerLink]="['/offers', created.id]">OPEN CARGO ORDER</a></p> }
       @if (step === 1) {
-        <div class="reference-strip"><span>NR.</span><b>REFERENCE</b><strong>2958</strong></div>
-        <form class="form-grid">
-          <label class="form-field"><span>CHARTERER</span><input value="Charterer One" /></label>
-          <label class="form-field"><span>MY REFERENCE*</span><input value="NEW REFERENCE" /></label>
-          <label class="form-field"><span>CARGO QUANTITY</span><input value="8500 MT" /></label>
-          <label class="form-field"><span>STOWAGE FACTOR</span><input value="NA" /></label>
-          <label class="form-field field-wide"><span>CARGO DESCRIPTION</span><textarea></textarea></label>
-          <label class="form-field"><span>PORT/S OF LOADING</span><input /></label>
-          <label class="form-field"><span>LOADING CONDITIONS</span><input value="1GSB AAAA" /></label>
-          <label class="form-field"><span>PORT/S OF DISCHARGE</span><input /></label>
-          <label class="form-field"><span>DISCHARGE CONDITIONS</span><input value="1GSB AAAA" /></label>
-          <label class="form-field"><span>LAY/CAN</span><input placeholder="DD/MM/YY - DD/MM/YY" /></label>
-          <label class="form-field"><span>LOADING / DISCHARGING TERMS</span><input value="FIOS" /></label>
-          <label class="form-field"><span>LAYTIME TERMS</span><input value="72H WWD" /></label>
-          <label class="form-field"><span>C/P FORM</span><input value="GENCON 94" /></label>
-          <label class="form-field"><span>RESTRICTIONS</span><input value="MAX 24 YEARS VESSEL" /></label>
-          <label class="form-field field-wide"><span>ADDITIONAL REQUIREMENTS</span><textarea></textarea></label>
-          <label class="form-field"><span>FREIGHT</span><input placeholder="USD / LPSM" /></label>
+        <div class="reference-strip"><span>NR.</span><b>REFERENCE</b><strong>Assigned on save</strong></div>
+        <form class="form-grid" (ngSubmit)="setStep(2)">
+          <label class="form-field"><span>CHARTERER*</span><input name="charterer" [(ngModel)]="draft.terms.charterer" required /></label>
+          <label class="form-field"><span>MY REFERENCE*</span><input name="reference" [(ngModel)]="draft.customerReference" required /></label>
+          <label class="form-field"><span>CARGO QUANTITY (MT)*</span><input name="quantity" type="number" min="0.01" step="any" [(ngModel)]="draft.terms.quantity" required /></label>
+          <label class="form-field"><span>STOWAGE FACTOR</span><input name="stowageFactor" [(ngModel)]="draft.terms.stowageFactor" /></label>
+          <label class="form-field field-wide"><span>CARGO DESCRIPTION*</span><textarea name="commodity" [(ngModel)]="draft.terms.commodity" required></textarea></label>
+          <label class="form-field"><span>PORT/S OF LOADING*</span><input name="portOfLoading" [(ngModel)]="draft.terms.portOfLoading" required /></label>
+          <label class="form-field"><span>LOADING CONDITIONS</span><input name="loadingConditions" [(ngModel)]="draft.terms.loadingConditions" /></label>
+          <label class="form-field"><span>PORT/S OF DISCHARGE*</span><input name="portOfDischarge" [(ngModel)]="draft.terms.portOfDischarge" required /></label>
+          <label class="form-field"><span>DISCHARGE CONDITIONS</span><input name="dischargeConditions" [(ngModel)]="draft.terms.dischargeConditions" /></label>
+          <label class="form-field"><span>LAY/CAN*</span><input name="laycan" [(ngModel)]="draft.terms.laycan" placeholder="DD/MM/YY - DD/MM/YY" required /></label>
+          <label class="form-field"><span>LOADING / DISCHARGING TERMS</span><input name="loadingDischargingTerms" [(ngModel)]="draft.terms.loadingDischargingTerms" /></label>
+          <label class="form-field"><span>LAYTIME TERMS</span><input name="laytimeTerms" [(ngModel)]="draft.terms.laytimeTerms" /></label>
+          <label class="form-field"><span>C/P FORM</span><input name="charterPartyForm" [(ngModel)]="draft.terms.charterPartyForm" /></label>
+          <label class="form-field"><span>RESTRICTIONS</span><input name="restrictions" [(ngModel)]="draft.terms.restrictions" /></label>
+          <label class="form-field field-wide"><span>ADDITIONAL REQUIREMENTS</span><textarea name="additionalRequirements" [(ngModel)]="draft.terms.additionalRequirements"></textarea></label>
+          <label class="form-field"><span>FREIGHT (USD / LPSM)</span><input name="freight" type="number" min="0" step="any" [(ngModel)]="draft.terms.freight" /></label>
+          <div class="form-actions field-wide"><a class="secondary" routerLink="/home">Cancel</a><button class="primary" type="submit">Next</button></div>
         </form>
-        <div class="form-actions"><a class="secondary" routerLink="/home">Cancel</a><button class="primary" (click)="setStep(2)">Next</button></div>
       }
-
       @if (step === 2) {
-        <div class="selector-head"><div><h2>Select Shipowners</h2><p>Choose the companies that will receive this cargo order.</p></div><span>{{ selectedOwners.size }} selected</span></div>
+        <div class="selector-head"><div><h2>Select Shipowners</h2><p>Choose the companies invited to this cargo order.</p></div><span>{{ selectedOwners.size }} selected</span></div>
+        @if (loading) { <p role="status">Loading shipowners...</p> }
+        @if (!loading && !owners.length) { <p>No approved shipowners available.</p> }
         <div class="company-selector">
           @for (owner of owners; track owner.id) {
-            <label class="company-choice" [class.selected]="selectedOwners.has(owner.id)"><input type="checkbox" (change)="toggleOwner(owner.id, $any($event.target).checked)"/><span class="company-avatar">{{ initials(owner.name) }}</span><span><b>{{ owner.name }}</b><small>{{ owner.country }} &middot; Approved</small></span></label>
+            <label class="company-choice" [class.selected]="selectedOwners.has(owner.id)"><input type="checkbox" [checked]="selectedOwners.has(owner.id)" [disabled]="saving" (change)="toggleOwner(owner.id, $any($event.target).checked)"/><span class="company-avatar">{{ initials(owner.name) }}</span><span><b>{{ owner.name }}</b><small>{{ owner.country }} &middot; Approved</small></span></label>
           }
         </div>
-        <div class="form-actions"><button class="secondary" (click)="setStep(1)">Back</button><button class="primary" [disabled]="!selectedOwners.size" (click)="setStep(3)">Next</button></div>
+        <div class="form-actions"><button class="secondary" (click)="setStep(1)">Back</button><button class="primary" [disabled]="loading || !selectedOwners.size" (click)="setStep(3)">Next</button></div>
       }
-
       @if (step === 3) {
-        <div class="confirmation-layout"><section><h2>Confirm cargo order</h2><table><tbody><tr><th>0</th><td>MY REFERENCE</td><td>NEW REFERENCE</td></tr><tr><th>1</th><td>CHARTERER</td><td>Charterer One</td></tr><tr><th>2</th><td>CARGO QUANTITY</td><td>8500 MT / NA</td></tr><tr><th>3</th><td>C/P FORM</td><td>GENCON 94</td></tr></tbody></table></section><aside class="confirm-aside"><h3>Recipients</h3>@for (owner of owners; track owner.id) { @if (selectedOwners.has(owner.id)) { <div class="recipient">{{ owner.name }}<span>Ready</span></div> } }<p>An email notification will be prepared for every selected shipowner.</p></aside></div>
-        <div class="form-actions"><button class="secondary" (click)="setStep(2)">Back</button><button class="primary">CONFIRM AND SEND</button></div>
+        <div class="confirmation-layout"><section><h2>Confirm cargo order</h2><table><tbody>@for (row of confirmationRows; track row.label; let index = $index) { <tr><th>{{ index }}</th><td>{{ row.label }}</td><td>{{ row.value }}</td></tr> }</tbody></table></section><aside class="confirm-aside"><h3>Recipients</h3>@for (owner of owners; track owner.id) { @if (selectedOwners.has(owner.id)) { <div class="recipient">{{ owner.name }}<span>Ready</span></div> } }<p>The selected shipowners will be recorded with this cargo order. Email delivery is not implemented yet.</p></aside></div>
+        <div class="form-actions"><button class="secondary" [disabled]="saving || !!offer" (click)="setStep(2)">Back</button><button class="primary" [disabled]="saving || loading || !!offer" (click)="createOffer()">{{ saving ? 'SAVING...' : 'CONFIRM AND SEND' }}</button></div>
       }
     </section>
   } @else {
-    @if (offer$ | async; as offer) {
-      <section class="page-body"><div class="offer-head"><div><small>REFERENCE {{ offer.reference }}</small><h1>{{ offer.customerReference }}</h1><p>{{ offer.terms.portOfLoading }} &rarr; {{ offer.terms.portOfDischarge }}</p></div><span>{{ offer.stage }}</span></div>
-      <table><tbody><tr><th>1</th><td>CHARTERER</td><td>{{ offer.terms.charterer }}</td></tr><tr><th>2</th><td>CARGO</td><td>{{ offer.terms.quantity }} {{ offer.terms.quantityUnit }} / {{ offer.terms.commodity }}</td></tr><tr><th>3</th><td>LAY/CAN</td><td>{{ offer.terms.laycan }}</td></tr><tr><th>4</th><td>C/P FORM</td><td>{{ offer.terms.charterPartyForm }}</td></tr></tbody></table>
-      <div class="form-actions"><a class="secondary" routerLink="/home">Back</a><button class="primary">CONTINUE WORKFLOW</button></div></section>
+    @if (loading) { <p role="status">Loading cargo order...</p> }
+    @if (offer; as current) {
+      <section class="page-body"><div class="offer-head"><div><small>REFERENCE {{ current.reference }}</small><h1>{{ current.customerReference }}</h1><p>{{ current.terms.portOfLoading }} &rarr; {{ current.terms.portOfDischarge }}</p></div><span>{{ current.stage }}</span></div>
+      <table><tbody><tr><th>1</th><td>CHARTERER</td><td>{{ current.terms.charterer }}</td></tr><tr><th>2</th><td>CARGO</td><td>{{ current.terms.quantity }} {{ current.terms.quantityUnit }} / {{ current.terms.commodity }}</td></tr><tr><th>3</th><td>LAY/CAN</td><td>{{ current.terms.laycan }}</td></tr><tr><th>4</th><td>C/P FORM</td><td>{{ current.terms.charterPartyForm }}</td></tr></tbody></table>
+      <div class="form-actions"><a class="secondary" routerLink="/home">Back</a><a class="primary" [routerLink]="['/offers', current.id, current.stage === 'CargoOrder' ? 'comparative' : current.stage === 'Negotiation' ? 'negotiation' : 'recap']">CONTINUE WORKFLOW</a></div></section>
     }
   }
 </section>

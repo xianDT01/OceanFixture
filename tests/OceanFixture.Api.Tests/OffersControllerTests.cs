@@ -30,7 +30,7 @@ public sealed class OffersControllerTests
     {
         var store = new DemoStore();
         var controller = new OffersController(store);
-        var input = new CargoOffer { CustomerReference = "TEST-NEW", Terms = new VoyageTerms { Commodity = "Steel" } };
+        var input = ValidCargoRequest();
 
         var result = controller.Create(input);
         var response = Assert.IsType<CreatedAtActionResult>(result.Result);
@@ -39,6 +39,8 @@ public sealed class OffersControllerTests
         Assert.Equal(2958, created.Reference);
         Assert.Equal("TEST-NEW", created.CustomerReference);
         Assert.Contains(created, store.Offers);
+        Assert.Equal(OfferStage.CargoOrder, created.Stage);
+        Assert.Equal([119], created.InvitedShipownerIds);
     }
 
     [Fact]
@@ -226,6 +228,90 @@ public sealed class OffersControllerTests
         offer.Bids[0] = bid with { Terms = bid.Terms with { Freight = 1 } };
         Assert.NotEqual(version, offer.RecapVersion);
         Assert.IsType<ConflictObjectResult>(new OffersController(store).SelectFirmOffer(offer.Id, bid.ShipownerId, new(version)).Result);
+    }
+
+    private static CreateCargoOfferRequest ValidCargoRequest() => new("TEST-NEW", new VoyageTerms
+    {
+        Charterer = "Customer", Quantity = 8500, Commodity = "Steel", PortOfLoading = "Vigo",
+        PortOfDischarge = "Bilbao", Laycan = "20/10/26 - 23/10/26"
+    }, [119]);
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(-10)]
+    public void Create_rejects_invalid_quantity_without_storing_offer(decimal quantity)
+    {
+        var store = new DemoStore();
+        var request = ValidCargoRequest();
+        var result = new OffersController(store).Create(request with { Terms = request.Terms with { Quantity = quantity } });
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(8, store.Offers.Count);
+    }
+
+    [Theory]
+    [InlineData("reference")]
+    [InlineData("charterer")]
+    [InlineData("cargo")]
+    [InlineData("loading")]
+    [InlineData("discharge")]
+    [InlineData("laycan")]
+    public void Create_rejects_missing_required_text(string field)
+    {
+        var store = new DemoStore();
+        var request = ValidCargoRequest();
+        request = field switch
+        {
+            "reference" => request with { CustomerReference = " " },
+            "charterer" => request with { Terms = request.Terms with { Charterer = " " } },
+            "cargo" => request with { Terms = request.Terms with { Commodity = " " } },
+            "loading" => request with { Terms = request.Terms with { PortOfLoading = " " } },
+            "discharge" => request with { Terms = request.Terms with { PortOfDischarge = " " } },
+            _ => request with { Terms = request.Terms with { Laycan = " " } }
+        };
+        Assert.IsType<BadRequestObjectResult>(new OffersController(store).Create(request).Result);
+        Assert.Equal(8, store.Offers.Count);
+    }
+
+    [Theory]
+    [InlineData(999)]
+    [InlineData(39)]
+    public void Create_rejects_unknown_or_non_shipowner_recipient(int recipient)
+    {
+        var store = new DemoStore();
+        Assert.IsType<BadRequestObjectResult>(new OffersController(store).Create(
+            ValidCargoRequest() with { InvitedShipownerIds = [recipient] }).Result);
+        Assert.Equal(8, store.Offers.Count);
+    }
+
+    [Fact]
+    public void Create_requires_at_least_one_approved_shipowner()
+    {
+        var store = new DemoStore();
+        var controller = new OffersController(store);
+        Assert.IsType<BadRequestObjectResult>(controller.Create(ValidCargoRequest() with { InvitedShipownerIds = [] }).Result);
+        store.Companies.Add(new(999, "Unapproved", "Shipowner", "Spain", "", false));
+        Assert.IsType<BadRequestObjectResult>(controller.Create(ValidCargoRequest() with { InvitedShipownerIds = [999] }).Result);
+        Assert.Equal(8, store.Offers.Count);
+    }
+
+    [Fact]
+    public void Create_deduplicates_recipients_and_appears_on_dashboard()
+    {
+        var store = new DemoStore();
+        var controller = new OffersController(store);
+        var result = controller.Create(ValidCargoRequest() with { InvitedShipownerIds = [119, 119, 120] });
+        var created = Assert.IsType<CargoOffer>(Assert.IsType<CreatedAtActionResult>(result.Result).Value);
+        Assert.Equal([119, 120], created.InvitedShipownerIds);
+        Assert.Contains(created, AssertOk(controller.Dashboard()).Single(lane => lane.Key == "CargoOrder").Offers);
+    }
+
+    [Fact]
+    public void Concurrent_creates_assign_unique_references()
+    {
+        var store = new DemoStore();
+        Parallel.For(0, 10, _ => new OffersController(store).Create(ValidCargoRequest()));
+        Assert.Equal(18, store.Offers.Count);
+        Assert.Equal(18, store.Offers.Select(offer => offer.Reference).Distinct().Count());
     }
 
     private static T AssertOk<T>(ActionResult<T> result)

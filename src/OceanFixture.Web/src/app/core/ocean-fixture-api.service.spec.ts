@@ -32,6 +32,22 @@ describe('OceanFixtureApiService negotiation', () => {
     request.flush({});
   });
 
+  it('loads shipowners from the company catalog', () => {
+    api.shipowners().subscribe(companies => expect(companies).toEqual([]));
+    const request = http.expectOne('http://localhost:5100/v1/api/companies?type=Shipowner');
+    expect(request.request.method).toBe('GET');
+    request.flush([]);
+  });
+
+  it('posts cargo data and recipients without client-generated reference numbers', () => {
+    const request = { customerReference: 'NEW', terms: { quantity: 8500 } as VoyageTerms, invitedShipownerIds: [119] };
+    api.createOffer(request).subscribe();
+    const pending = http.expectOne('http://localhost:5100/v1/api/offers');
+    expect(pending.request.method).toBe('POST');
+    expect(pending.request.body).toEqual(request);
+    pending.flush({});
+  });
+
   it('propagates conflicts instead of returning simulated success', () => {
     let status = 0;
     api.sendCounter('offer-id', {} as VoyageTerms, [], [], 'old').subscribe({
