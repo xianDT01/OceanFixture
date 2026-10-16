@@ -47,13 +47,17 @@ public sealed class OffersController(DemoStore store) : ControllerBase
     }
 
     [HttpPost("{id:guid}/firm-offer/{shipownerId:int}")]
-    public ActionResult<CargoOffer> SelectFirmOffer(Guid id, int shipownerId)
+    public ActionResult<CargoOffer> SelectFirmOffer(Guid id, int shipownerId, SelectFirmOfferRequest request)
     {
         lock (store)
         {
             var offer = store.Offers.FirstOrDefault(item => item.Id == id);
             var bid = offer?.Bids.FirstOrDefault(item => item.ShipownerId == shipownerId);
             if (offer is null || bid is null) return NotFound();
+            if (request.VersionHash != offer.RecapVersion)
+                return Conflict(new { message = "The offer has changed. Reload before selecting." });
+            if (offer.Stage != OfferStage.CargoOrder)
+                return BadRequest(new { message = "A firm offer can only be selected for a cargo order." });
             offer.SelectedShipownerId = shipownerId;
             offer.Terms = bid.Terms;
             offer.Confirmations.Clear();
@@ -124,4 +128,5 @@ public sealed class OffersController(DemoStore store) : ControllerBase
 }
 
 public sealed record ConfirmRecapRequest(string Party, string ConfirmedBy, string VersionHash);
+public sealed record SelectFirmOfferRequest(string VersionHash);
 public sealed record NegotiatedCounterRequest(VoyageTerms Terms, string[] ChartererClauses, string[] ShipownerClauses, string VersionHash);

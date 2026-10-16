@@ -19,9 +19,9 @@ public sealed class OffersControllerTests
         Assert.Equal(4, lanes.Count);
         Assert.Equal(8, lanes.Sum(lane => lane.Offers.Count));
         Assert.Collection(lanes,
-            lane => AssertLane(lane, "CARGO ORDERS", 3),
+            lane => AssertLane(lane, "CARGO ORDERS", 4),
             lane => AssertLane(lane, "NEGOTIATION", 1),
-            lane => AssertLane(lane, "OPERATIVE", 2),
+            lane => AssertLane(lane, "OPERATIVE", 1),
             lane => AssertLane(lane, "ARCHIVE", 2));
     }
 
@@ -49,7 +49,7 @@ public sealed class OffersControllerTests
         var bid = offer.Bids[0];
         var controller = new OffersController(store);
 
-        var result = controller.SelectFirmOffer(offer.Id, bid.ShipownerId);
+        var result = controller.SelectFirmOffer(offer.Id, bid.ShipownerId, new(offer.RecapVersion));
         var updated = AssertOk<CargoOffer>(result);
 
         Assert.Equal(OfferStage.Negotiation, updated.Stage);
@@ -176,6 +176,56 @@ public sealed class OffersControllerTests
         Assert.Same(original, offer.Terms);
         Assert.Empty(offer.ChartererClauses);
         Assert.Equal(0, offer.Counter);
+    }
+
+    [Fact]
+    public void Firm_offer_rejects_stale_versions_without_selecting_a_bid()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.Single(item => item.Reference == 2941);
+        var original = offer.Terms;
+        var result = new OffersController(store).SelectFirmOffer(offer.Id, offer.Bids[0].ShipownerId, new("stale"));
+        Assert.IsType<ConflictObjectResult>(result.Result);
+        Assert.Null(offer.SelectedShipownerId);
+        Assert.Same(original, offer.Terms);
+        Assert.Equal(OfferStage.CargoOrder, offer.Stage);
+    }
+
+    [Theory]
+    [InlineData(OfferStage.Negotiation)]
+    [InlineData(OfferStage.Operative)]
+    [InlineData(OfferStage.Archive)]
+    public void Firm_offer_does_not_reopen_operations(OfferStage stage)
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.Single(item => item.Reference == 2941);
+        offer.Stage = stage;
+        var result = new OffersController(store).SelectFirmOffer(offer.Id, offer.Bids[0].ShipownerId, new(offer.RecapVersion));
+        Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal(stage, offer.Stage);
+        Assert.Null(offer.SelectedShipownerId);
+    }
+
+    [Fact]
+    public void Firm_offer_rejects_a_shipowner_without_a_bid()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.Single(item => item.Reference == 2941);
+        var result = new OffersController(store).SelectFirmOffer(offer.Id, 999, new(offer.RecapVersion));
+        Assert.IsType<NotFoundResult>(result.Result);
+        Assert.Null(offer.SelectedShipownerId);
+    }
+
+    [Fact]
+    public void Updated_bid_invalidates_the_comparison_version()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.Single(item => item.Reference == 2941);
+        var version = offer.RecapVersion;
+        var bid = offer.Bids[0];
+        offer.Bids[0] = bid with { Terms = bid.Terms with { Freight = 1 } };
+        Assert.NotEqual(version, offer.RecapVersion);
+        Assert.IsType<ConflictObjectResult>(new OffersController(store).SelectFirmOffer(offer.Id, bid.ShipownerId, new(version)).Result);
     }
 
     private static T AssertOk<T>(ActionResult<T> result)

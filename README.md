@@ -56,6 +56,8 @@ Sus puertos son `5101`, `5102` y `5103`, respectivamente. Cada servicio expone `
 
 ## Endpoints principales
 
+La comparativa carga las ofertas de armadores desde la API, resalta diferencias y selecciona una oferta firm con control de version. Solo permite seleccionar mientras la operacion esta en CargoOrder; al guardar abre la negociacion con las condiciones del armador elegido. No reabre operaciones negociadas, operativas o archivadas. La referencia demo 2941 comienza en CargoOrder y contiene tres ofertas para probar este recorrido. Chat, notas, recordatorios y archivo de la comparativa siguen pendientes.
+
 La negociacion carga los datos de cada oferta desde la API y envia condiciones y clausulas con control de version. Si otra peticion cambia la oferta, el servidor rechaza el envio con HTTP 409; los cambios escritos se mantienen en pantalla. Preparar el Recap requiere enviar primero los cambios. Borradores, chat y documentos de esta pantalla siguen pendientes y sus botones estan deshabilitados. El almacenamiento y la identidad siguen siendo de demostracion.
 
 - `GET /v1/api/offers/dashboard`
@@ -63,7 +65,7 @@ La negociacion carga los datos de cada oferta desde la API y envia condiciones y
 - `GET /v1/api/offers/{id}`
 - `GET /v1/api/offers/{reference}` (referencia numerica)
 - `POST /v1/api/offers`
-- `POST /v1/api/offers/{id}/firm-offer/{shipownerId}`
+- `POST /v1/api/offers/{id}/firm-offer/{shipownerId}` (requiere `{ "versionHash": "version recibida en recapVersion" }`)
 - `POST /v1/api/offers/{id}/counter`
 - `POST /v1/api/offers/{id}/negotiation/counter` (condiciones, clausulas y version)
 - `POST /v1/api/offers/{id}/recap/confirm`

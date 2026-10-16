@@ -24,6 +24,14 @@ describe('OceanFixtureApiService negotiation', () => {
     request.flush({});
   });
 
+  it('posts the selected shipowner and the comparison version', () => {
+    api.selectFirmOffer('offer-id', 120, 'version-1').subscribe();
+    const request = http.expectOne('http://localhost:5100/v1/api/offers/offer-id/firm-offer/120');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ versionHash: 'version-1' });
+    request.flush({});
+  });
+
   it('propagates conflicts instead of returning simulated success', () => {
     let status = 0;
     api.sendCounter('offer-id', {} as VoyageTerms, [], [], 'old').subscribe({

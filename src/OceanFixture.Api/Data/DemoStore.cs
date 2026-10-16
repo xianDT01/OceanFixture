@@ -28,7 +28,7 @@ public sealed class DemoStore
             CreateOffer(2938, "ALTBIO-323-25", OfferStage.Archive, 6_800, "WOODEN BOXES AS PER ATTACHED", "Vigo (ESVGO)", "Immingham (GBIMM)", "01/02/25 - 12/02/25", "2025-01-29")
         ];
 
-        var comparative = CreateOffer(2941, "ALT BIO 445-25", OfferStage.Operative, 9_000, "Cold-rolled steel coils", "Derince (TRDRC)", "Bilbao (ESBIO)", "18/02/25 - 20/02/25", "2025-02-03");
+        var comparative = CreateOffer(2941, "ALT BIO 445-25", OfferStage.CargoOrder, 9_000, "Cold-rolled steel coils", "Derince (TRDRC)", "Bilbao (ESBIO)", "18/02/25 - 20/02/25", "2025-02-03");
         comparative.Bids.AddRange(
         [
             Bid(120, "Baltic Meridian", comparative.Terms with { Freight = 195_000, FreightCurrency = "EUR", VesselName = "EVER-SKY" }),

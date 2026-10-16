@@ -38,6 +38,9 @@ export class OceanFixtureApiService {
   private readonly baseUrl = 'http://localhost:5100/v1/api';
   dashboard(): Observable<DashboardLane[]> { return this.http.get<DashboardLane[]>(`${this.baseUrl}/offers/dashboard`).pipe(catchError(() => of(FALLBACK))); }
   recap(id: string): Observable<CargoOffer> { return this.http.get<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}`); }
+  selectFirmOffer(id: string, shipownerId: number, versionHash: string): Observable<CargoOffer> {
+    return this.http.post<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/firm-offer/${shipownerId}`, { versionHash });
+  }
   sendCounter(id: string, terms: VoyageTerms, chartererClauses: string[], shipownerClauses: string[], versionHash: string): Observable<CargoOffer> {
     return this.http.post<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/negotiation/counter`,
       { terms, chartererClauses, shipownerClauses, versionHash });
