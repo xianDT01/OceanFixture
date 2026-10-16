@@ -3,6 +3,8 @@ import { provideRouter } from '@angular/router';
 import { firstValueFrom, of } from 'rxjs';
 import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
 import { DashboardComponent } from './dashboard.component';
+import { GeographicMapComponent } from './geographic-map.component';
+import { By } from '@angular/platform-browser';
 
 describe('DashboardComponent', () => {
   const lanes = [
@@ -28,6 +30,23 @@ describe('DashboardComponent', () => {
     component.search = 'bilbao';
     expect(component.matches('Derince to BILBAO')).toBeTrue();
     expect(component.matches('Vigo to Aviles')).toBeFalse();
+  });
+
+  it('connects the map zoom buttons and expand/collapse control', () => {
+    spyOn(GeographicMapComponent.prototype, 'ngAfterViewInit');
+    const zoomIn = spyOn(GeographicMapComponent.prototype, 'zoomIn');
+    const zoomOut = spyOn(GeographicMapComponent.prototype, 'zoomOut');
+    const fixture = TestBed.createComponent(DashboardComponent);
+    fixture.detectChanges();
+    expect(fixture.debugElement.query(By.directive(GeographicMapComponent))).toBeTruthy();
+    expect(fixture.nativeElement.querySelector('img[src="assets/world-map.svg"]')).toBeNull();
+    fixture.nativeElement.querySelector('[aria-label="Zoom in"]').click();
+    fixture.nativeElement.querySelector('[aria-label="Zoom out"]').click();
+    expect(zoomIn).toHaveBeenCalledTimes(1);
+    expect(zoomOut).toHaveBeenCalledTimes(1);
+    fixture.nativeElement.querySelector('.collapse').click(); fixture.detectChanges();
+    expect(fixture.componentInstance.mapCollapsed).toBeTrue();
+    expect(fixture.nativeElement.querySelector('.collapse').getAttribute('aria-expanded')).toBe('false');
   });
 
   it('matches every value when search is empty', () => {

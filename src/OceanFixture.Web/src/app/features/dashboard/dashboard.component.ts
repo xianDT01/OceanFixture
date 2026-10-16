@@ -4,8 +4,9 @@ import { FormsModule } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { map } from 'rxjs';
 import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
+import { GeographicMapComponent } from './geographic-map.component';
 
-@Component({ selector: 'of-dashboard', standalone: true, imports: [AsyncPipe, DatePipe, FormsModule, RouterLink], templateUrl: './dashboard.component.html', styleUrl: './dashboard.component.scss' })
+@Component({ selector: 'of-dashboard', standalone: true, imports: [AsyncPipe, DatePipe, FormsModule, RouterLink, GeographicMapComponent], templateUrl: './dashboard.component.html', styleUrl: './dashboard.component.scss' })
 export class DashboardComponent {
   private readonly api = inject(OceanFixtureApiService);
   readonly lanes$ = this.api.dashboard();

@@ -10,11 +10,11 @@
   </header>
 
   <section class="map-frame">
-    <section class="world" [class.collapsed]="mapCollapsed">
-      <img src="assets/world-map.svg" alt="World map" />
+    <section class="world" [class.collapsed]="mapCollapsed" (transitionend)="geographicMap.refreshLayout()">
+      <of-geographic-map #geographicMap />
       <div class="stat"><b>{{ count$ | async }}</b><span>ACTIVE REFERENCES</span></div>
-      <div class="zoom"><button>+</button><button>&minus;</button></div>
-      <button class="collapse" (click)="mapCollapsed = !mapCollapsed">&#8250;</button>
+      <div class="zoom"><button type="button" aria-label="Zoom in" (click)="geographicMap.zoomIn()">+</button><button type="button" aria-label="Zoom out" (click)="geographicMap.zoomOut()">&minus;</button></div>
+      <button class="collapse" type="button" [attr.aria-expanded]="!mapCollapsed" [attr.aria-label]="mapCollapsed ? 'Expand map' : 'Collapse map'" (click)="mapCollapsed = !mapCollapsed">{{ mapCollapsed ? '⌄' : '⌃' }}</button>
     </section>
   </section>
 

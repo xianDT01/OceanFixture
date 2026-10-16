@@ -47,6 +47,8 @@ Sus puertos son `5101`, `5102` y `5103`, respectivamente. Cada servicio expone `
 
 ## Funcionalidad iniciada
 
+El dashboard incorpora un mapa geografico Leaflet con cartografia OpenStreetMap: permite arrastrar, hacer zoom con botones, teclado o gestos tactiles y plegar/desplegar el panel. No contiene posiciones ni seguimiento de barcos. Las teselas requieren internet y muestran atribucion visible; si fallan, hay un aviso con reintento. Se usan las teselas estandar solo bajo demanda, sin descarga masiva ni precarga offline. Antes de un despliegue con trafico elevado se debe configurar un proveedor apropiado y revisar la [politica de teselas de OpenStreetMap](https://operations.osmfoundation.org/policies/tiles/).
+
 - Dashboard por etapas: cargo order, firm offer, counter offer y fixture recap.
 - Vista de mapa y tarjetas de operaciones.
 - Formulario de nueva orden de carga.
