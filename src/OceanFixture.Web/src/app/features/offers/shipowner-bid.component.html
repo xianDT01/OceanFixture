@@ -1,0 +1,21 @@
+<section class="negotiation-page">
+  <header class="breadcrumb"><a routerLink="/home" aria-label="Home">&#8962;</a><span>&#8250;</span><b>Shipowner offer &middot; {{ offer?.reference }}</b><span class="role-pill">OF - OF</span></header>
+  @if (loading) { <p role="status">Loading cargo order...</p> }
+  @if (error) { <p role="alert">{{ error }} <button (click)="reload()" [disabled]="saving">RELOAD (DISCARD EDITS)</button></p> }
+  @if (message) { <p role="status">{{ message }}</p> }
+  @if (offer; as current) {
+    <section class="page-body" [attr.aria-busy]="saving">
+      <div class="negotiation-head"><div><span>{{ current.bids.length ? 'UPDATE YOUR OFFER' : 'SUBMIT YOUR OFFER' }}</span><h2>{{ current.customerReference }}</h2><p>{{ current.terms.charterer }} &middot; {{ current.terms.portOfLoading }} &rarr; {{ current.terms.portOfDischarge }}</p></div></div>
+      @if (!current.permissions?.canSubmitBid) { <p role="status">This cargo order is not open for your offers.</p> }
+      <div class="reference-strip"><span>NR.</span><b>REFERENCE</b><strong>{{ current.reference }}</strong></div>
+      <p>The original cargo conditions are shown beside your proposal. Only your own offer is visible here. Saving does not send an email.</p>
+      <div class="negotiation-form">@for (row of rows; track row.key; let index = $index) {
+        <div class="neg-row"><b>{{ index + 1 }}</b><label [for]="'bid-' + row.key">{{ row.label }}</label><div class="original-value">{{ row.original }}</div>
+          @if (row.multiline) { <textarea [id]="'bid-' + row.key" [(ngModel)]="row.value" [disabled]="!canSubmit"></textarea> }
+          @else { <input [id]="'bid-' + row.key" [(ngModel)]="row.value" [disabled]="!canSubmit" /> }
+        </div>
+      }</div>
+      <div class="page-actions"><a routerLink="/home">BACK TO DASHBOARD</a><a [routerLink]="['/offers', current.id, 'comparative']">VIEW COMPARISON</a><button class="primary" [disabled]="!canSubmit" (click)="submit()">{{ saving ? 'SAVING...' : current.bids.length ? 'UPDATE MY OFFER' : 'SUBMIT OFFER' }}</button></div>
+    </section>
+  }
+</section>

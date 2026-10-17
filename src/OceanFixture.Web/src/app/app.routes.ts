@@ -15,6 +15,7 @@ export const routes: Routes = [
     children: [
       { path: 'home', loadComponent: () => import('./features/dashboard/dashboard.component').then(module => module.DashboardComponent), title: 'OceanFixture - Home' },
       { path: 'offers/new', component: OfferWorkspaceComponent, canActivate: [sessionGuard], data: { roles: ['Charterer', 'Admin'] }, title: 'OceanFixture - New cargo order' },
+      { path: 'offers/:id/bid', loadComponent: () => import('./features/offers/shipowner-bid.component').then(module => module.ShipownerBidComponent), canActivate: [sessionGuard], data: { roles: ['Shipowner'] }, title: 'OceanFixture - Shipowner offer' },
       { path: 'offers/:id/comparative', component: ComparativeComponent, title: 'OceanFixture - Comparative' },
       { path: 'offers/:id/negotiation', component: NegotiationComponent, title: 'OceanFixture - Negotiation' },
       { path: 'offers/:id/recap', component: RecapComponent, title: 'OceanFixture - Fixture recap' },

@@ -2,6 +2,14 @@
 
 OceanFixture es una recreacion independiente de la plataforma estudiada, orientada a la gestion del proceso de fletamento maritimo: alta de cargas, seleccion de armadores, intercambio de ofertas, cierre de condiciones y recapitulacion.
 
+## Documentacion
+
+- [Estado funcional y pendientes](docs/ESTADO_DEL_PROYECTO.md).
+- [Registro de desarrollo y decisiones](docs/REGISTRO_DE_DESARROLLO.md).
+- [Recorridos de prueba por rol](docs/PRUEBAS_MANUALES.md).
+
+Este README cubre arranque, arquitectura y API. Los documentos anteriores separan lo implementado de la demo y de lo pendiente; las pruebas y Git conservan las comprobaciones y cambios de codigo. Las capturas originales, credenciales y bases locales no se suben al repositorio.
+
 ## Arquitectura
 
 - `OceanFixture.Web`: SPA Angular 17.
@@ -26,12 +34,12 @@ El selector solo esta disponible con `Authentication:EnableLocalDemoSessions=tru
 | Perfil | Acceso y acciones implementadas |
 | --- | --- |
 | Cargador | Solo sus cargas; crea ordenes, selecciona armador, negocia, modifica sus clausulas y confirma su parte del Recap. |
-| Armador | Ordenes a las que esta invitado; solo sus propias ofertas. Tras la seleccion, solo participa en las operaciones donde es el armador elegido. Negocia, modifica sus clausulas y confirma su parte. No crea cargas ni selecciona competidores. |
+| Armador | Ordenes a las que esta invitado; envia o actualiza su propuesta y solo ve sus propias ofertas. Tras la seleccion, solo participa en las operaciones donde es el armador elegido. Negocia, modifica sus clausulas y confirma su parte. No crea cargas ni selecciona competidores. |
 | Administrador | Consulta todas las operaciones y empresas. Puede crear cargas y seleccionar ofertas en gestion. No negocia ni confirma el Recap como si fuera una de las partes. El panel completo de administracion sigue pendiente. |
 
 La API devuelve permisos por operacion para los controles de la interfaz, pero tambien los comprueba en el servidor. Los accesos a operaciones ajenas devuelven 404 y las acciones de rol no permitidas, 403. El armador no recibe cotizaciones ni el listado de invitaciones de competidores. La version enviada a todos los participantes sigue siendo la del estado completo, incluso en respuestas con datos ocultos.
 
-Las instantaneas locales anteriores a esta separacion pertenecen al cargador demo 39 por compatibilidad; no se reescriben sus condiciones ni sus hashes de confirmacion. No se inventa un armador seleccionado en operaciones antiguas que no lo tengan. Los perfiles ofrecidos por el selector se limitan a empresas aprobadas existentes en la base; el cargador demo 40 solo aparece si existe. Quedan pendientes usuarios y contrasenas reales, verificacion de identidad, OIDC/Identity, administracion de membresias, auditoria, turnos de negociacion y el panel completo del armador para presentar ofertas.
+Las instantaneas locales anteriores a esta separacion pertenecen al cargador demo 39 por compatibilidad; no se reescriben sus condiciones ni sus hashes de confirmacion. No se inventa un armador seleccionado en operaciones antiguas que no lo tengan. Los perfiles ofrecidos por el selector se limitan a empresas aprobadas existentes en la base; el cargador demo 40 solo aparece si existe. Quedan pendientes usuarios y contrasenas reales, verificacion de identidad, OIDC/Identity, administracion de membresias, auditoria, turnos de negociacion y la gestion avanzada de respuestas del armador.
 
 ## Persistencia local
 
@@ -97,6 +105,7 @@ La negociacion carga los datos de cada oferta desde la API y envia condiciones y
 - `GET /v1/api/offers/{id}`
 - `GET /v1/api/offers/{reference}` (referencia numerica)
 - `POST /v1/api/offers` (`customerReference`, `terms`, `invitedShipownerIds`)
+- `POST /v1/api/offers/{id}/bids` (`terms`, `versionHash`): solo armador invitado mientras la carga sigue abierta; crea o actualiza su propuesta vigente. Empresa y nombre se toman del servidor. No envia correos.
 - `POST /v1/api/offers/{id}/firm-offer/{shipownerId}` (requiere `{ "versionHash": "version recibida en recapVersion" }`)
 - `POST /v1/api/offers/{id}/counter` (endpoint antiguo: HTTP 410; usar negociacion con version)
 - `POST /v1/api/offers/{id}/negotiation/counter` (condiciones, clausulas y version)

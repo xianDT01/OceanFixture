@@ -21,7 +21,8 @@ public sealed class OfferAccess(ClaimsPrincipal user)
         (OwnsCargo(offer) || IsSelectedOwner(offer)) && offer.Stage == OfferStage.Negotiation,
         OwnsCargo(offer) && offer.Stage == OfferStage.Negotiation,
         IsSelectedOwner(offer) && offer.Stage == OfferStage.Negotiation,
-        OwnsCargo(offer), IsSelectedOwner(offer));
+        OwnsCargo(offer), IsSelectedOwner(offer),
+        IsShipowner && offer.Stage == OfferStage.CargoOrder && offer.InvitedShipownerIds.Contains(CompanyId!.Value));
     public CargoOffer Project(CargoOffer offer)
     {
         offer.PreserveVersionForReadOnlyProjection();

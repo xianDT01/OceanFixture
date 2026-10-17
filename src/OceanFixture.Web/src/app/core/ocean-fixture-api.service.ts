@@ -12,6 +12,9 @@ export class OceanFixtureApiService {
   createOffer(request: CreateCargoOfferRequest): Observable<CargoOffer> { return this.http.post<CargoOffer>(`${this.baseUrl}/offers`, request); }
   dashboard(): Observable<DashboardLane[]> { return this.http.get<DashboardLane[]>(`${this.baseUrl}/offers/dashboard`); }
   recap(id: string): Observable<CargoOffer> { return this.http.get<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}`); }
+  submitBid(id: string, terms: VoyageTerms, versionHash: string): Observable<CargoOffer> {
+    return this.http.post<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/bids`, { terms, versionHash });
+  }
   selectFirmOffer(id: string, shipownerId: number, versionHash: string): Observable<CargoOffer> {
     return this.http.post<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/firm-offer/${shipownerId}`, { versionHash });
   }

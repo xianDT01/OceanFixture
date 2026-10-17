@@ -69,6 +69,40 @@ public sealed class OffersController(DemoStore store) : ControllerBase
         }
     }
 
+    [HttpPost("{id:guid}/bids")]
+    public ActionResult<CargoOffer> SubmitBid(Guid id, SubmitBidRequest request)
+    {
+        lock (store)
+        {
+            var offer = store.Offers.FirstOrDefault(item => item.Id == id);
+            if (offer is null) return NotFound();
+            if (offer.Stage != OfferStage.CargoOrder)
+                return BadRequest(new { message = "Offers can only be submitted while the cargo order is open." });
+            if (request.VersionHash != offer.RecapVersion)
+                return Conflict(new { message = "The cargo order has changed. Reload before submitting." });
+            var company = store.Companies.FirstOrDefault(item => item.Id == request.ShipownerId && item.Type == "Shipowner" && item.Approved);
+            if (company is null || !offer.InvitedShipownerIds.Contains(company.Id)) return Forbid();
+            var terms = request.Terms;
+            if (terms is null || terms.Quantity <= 0 || terms.Freight is null or <= 0 || terms.Demurrage < 0
+                || string.IsNullOrWhiteSpace(terms.Commodity) || string.IsNullOrWhiteSpace(terms.PortOfLoading)
+                || string.IsNullOrWhiteSpace(terms.PortOfDischarge) || string.IsNullOrWhiteSpace(terms.Laycan)
+                || string.IsNullOrWhiteSpace(terms.QuantityUnit) || string.IsNullOrWhiteSpace(terms.FreightUnit)
+                || string.IsNullOrWhiteSpace(terms.FreightCurrency) || terms.FreightCurrency.Length != 3
+                || !terms.FreightCurrency.All(char.IsAsciiLetter))
+                return BadRequest(new { message = "Valid cargo terms, a positive freight, currency and units are required." });
+            var previous = offer.Bids.FirstOrDefault(bid => bid.ShipownerId == company.Id);
+            var previousIndex = offer.Bids.FindIndex(item => item.ShipownerId == company.Id);
+            var bid = new ShipownerBid(previous?.Id ?? Guid.NewGuid(), company.Id, company.Name, DateTimeOffset.UtcNow,
+                terms with { Charterer = offer.Terms.Charterer, FreightCurrency = terms.FreightCurrency.ToUpperInvariant() });
+            store.Commit(() =>
+            {
+                offer.Bids.RemoveAll(item => item.ShipownerId == company.Id);
+                offer.Bids.Insert(previousIndex < 0 ? offer.Bids.Count : Math.Min(previousIndex, offer.Bids.Count), bid);
+            });
+            return Ok(SnapshotOffer(offer));
+        }
+    }
+
     [HttpPost("{id:guid}/firm-offer/{shipownerId:int}")]
     public ActionResult<CargoOffer> SelectFirmOffer(Guid id, int shipownerId, SelectFirmOfferRequest request)
     {
@@ -170,3 +204,4 @@ public sealed record ConfirmRecapRequest(string Party, string? ConfirmedBy, stri
 public sealed record CreateCargoOfferRequest(string CustomerReference, VoyageTerms Terms, int[] InvitedShipownerIds, int? ChartererCompanyId = null);
 public sealed record SelectFirmOfferRequest(string VersionHash);
 public sealed record NegotiatedCounterRequest(VoyageTerms Terms, string[] ChartererClauses, string[] ShipownerClauses, string VersionHash);
+public sealed record SubmitBidRequest(VoyageTerms Terms, string VersionHash, int? ShipownerId = null);

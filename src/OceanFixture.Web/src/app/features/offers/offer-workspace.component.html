@@ -52,7 +52,7 @@
     @if (offer; as current) {
       <section class="page-body"><div class="offer-head"><div><small>REFERENCE {{ current.reference }}</small><h1>{{ current.customerReference }}</h1><p>{{ current.terms.portOfLoading }} &rarr; {{ current.terms.portOfDischarge }}</p></div><span>{{ current.stage }}</span></div>
       <table><tbody><tr><th>1</th><td>CHARTERER</td><td>{{ current.terms.charterer }}</td></tr><tr><th>2</th><td>CARGO</td><td>{{ current.terms.quantity }} {{ current.terms.quantityUnit }} / {{ current.terms.commodity }}</td></tr><tr><th>3</th><td>LAY/CAN</td><td>{{ current.terms.laycan }}</td></tr><tr><th>4</th><td>C/P FORM</td><td>{{ current.terms.charterPartyForm }}</td></tr></tbody></table>
-      <div class="form-actions"><a class="secondary" routerLink="/home">Back</a><a class="primary" [routerLink]="['/offers', current.id, current.stage === 'CargoOrder' ? 'comparative' : current.stage === 'Negotiation' ? 'negotiation' : 'recap']">CONTINUE WORKFLOW</a></div></section>
+      <div class="form-actions"><a class="secondary" routerLink="/home">Back</a><a class="primary" [routerLink]="['/offers', current.id, current.permissions?.canSubmitBid ? 'bid' : current.stage === 'CargoOrder' ? 'comparative' : current.stage === 'Negotiation' ? 'negotiation' : 'recap']">CONTINUE WORKFLOW</a></div></section>
     }
   }
 </section>

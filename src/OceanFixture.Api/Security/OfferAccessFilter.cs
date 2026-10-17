@@ -35,12 +35,23 @@ public sealed class OfferAccessFilter(DemoStore store) : IAsyncActionFilter
             var companyId = access.IsAdmin ? request.ChartererCompanyId ?? 39 : access.CompanyId!.Value;
             var company = snapshot.Companies.FirstOrDefault(item => item.Id == companyId && item.Type == "Charterer" && item.Approved);
             if (company is null) { context.Result = new BadRequestObjectResult(new { message = "An approved charterer is required." }); return; }
-            context.ActionArguments["request"] = request with { ChartererCompanyId = companyId,
-                Terms = request.Terms is null ? null! : request.Terms with { Charterer = company.Name } };
+            context.ActionArguments["request"] = request with
+            {
+                ChartererCompanyId = companyId,
+                Terms = request.Terms is null ? null! : request.Terms with { Charterer = company.Name }
+            };
         }
         if (offer is not null)
         {
             var permissions = access.Permissions(offer);
+            if (action == nameof(OffersController.SubmitBid))
+            {
+                if (!permissions.CanSubmitBid) { context.Result = new ForbidResult(); return; }
+                var request = (SubmitBidRequest)context.ActionArguments["request"]!;
+                if (request.ShipownerId is { } requested && requested != access.CompanyId)
+                { context.Result = new ForbidResult(); return; }
+                context.ActionArguments["request"] = request with { ShipownerId = access.CompanyId };
+            }
             if (action == nameof(OffersController.SelectFirmOffer) && !permissions.CanSelectFirmOffer)
             { context.Result = new ForbidResult(); return; }
             if (action == nameof(OffersController.Counter))

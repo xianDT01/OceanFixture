@@ -48,6 +48,15 @@ describe('OceanFixtureApiService negotiation', () => {
     pending.flush({});
   });
 
+  it('posts bid terms and version without a client-controlled shipowner identity', () => {
+    const terms = { freight: 200000, freightCurrency: 'EUR' } as VoyageTerms;
+    api.submitBid('offer-id', terms, 'version-1').subscribe();
+    const request = http.expectOne('http://localhost:5100/v1/api/offers/offer-id/bids');
+    expect(request.request.method).toBe('POST');
+    expect(request.request.body).toEqual({ terms, versionHash: 'version-1' });
+    request.flush({});
+  });
+
   it('propagates conflicts instead of returning simulated success', () => {
     let status = 0;
     api.sendCounter('offer-id', {} as VoyageTerms, [], [], 'old').subscribe({

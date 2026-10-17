@@ -96,7 +96,7 @@ public sealed class CargoOffer
 
 public sealed record DashboardLane(string Key, string Label, IReadOnlyCollection<CargoOffer> Offers);
 public sealed record OfferPermissions(bool CanSelectFirmOffer, bool CanSendCounter, bool CanConfirmAsCharterer,
-    bool CanConfirmAsShipowner, bool CanEditChartererClauses, bool CanEditShipownerClauses);
+    bool CanConfirmAsShipowner, bool CanEditChartererClauses, bool CanEditShipownerClauses, bool CanSubmitBid = false);
 
 public sealed record MessageTemplate(string Key, string Description, string Subject);
 

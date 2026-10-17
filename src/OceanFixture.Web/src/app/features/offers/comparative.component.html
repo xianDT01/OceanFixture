@@ -20,6 +20,7 @@
       </table>
     </div>
     @if (current.stage === 'Negotiation') { <p><a [routerLink]="['/offers', current.id, 'negotiation']">CONTINUE NEGOTIATION</a></p> }
+    @if (current.permissions?.canSubmitBid) { <p><a [routerLink]="['/offers', current.id, 'bid']">{{ bids.length ? 'UPDATE MY OFFER' : 'SUBMIT OFFER' }}</a></p> }
     <div class="page-actions"><button class="secondary" disabled title="Not implemented yet">REMIND</button><button class="danger" disabled title="Not implemented yet">CANCEL AND ARCHIVE</button></div>
   </section>
   }

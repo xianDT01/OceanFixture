@@ -22,4 +22,4 @@ export interface DashboardLane { key: OfferStage; label: string; offers: CargoOf
 export interface Company { id: number; name: string; type: string; country: string; vat: string; approved: boolean; }
 export interface CreateCargoOfferRequest { customerReference: string; terms: VoyageTerms; invitedShipownerIds: number[]; }
 export interface OfferPermissions { canSelectFirmOffer: boolean; canSendCounter: boolean; canConfirmAsCharterer: boolean;
-  canConfirmAsShipowner: boolean; canEditChartererClauses: boolean; canEditShipownerClauses: boolean; }
+  canConfirmAsShipowner: boolean; canEditChartererClauses: boolean; canEditShipownerClauses: boolean; canSubmitBid?: boolean; }

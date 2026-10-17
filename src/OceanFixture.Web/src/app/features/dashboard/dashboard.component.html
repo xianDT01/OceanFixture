@@ -36,6 +36,7 @@
                 </div>
                 <nav>
                   <a [routerLink]="['/offers', offer.id]"><i>&#10003;</i> Cargo Order</a>
+                  @if (offer.permissions?.canSubmitBid) { <a [routerLink]="['/offers', offer.id, 'bid']"><i>&#9998;</i> {{ offer.bids.length ? 'Update my offer' : 'Submit offer' }}</a> }
                   @if (offer.bids.length || offer.stage !== 'CargoOrder') { <a [routerLink]="['/offers', offer.id, 'comparative']"><i>&#10003;</i> Offer Comparative Table</a> }
                   @if (offer.stage !== 'CargoOrder') { <a [routerLink]="['/offers', offer.id, 'negotiation']"><i>&#9875;</i> Negotiation</a> }
                   @if (offer.stage === 'Operative' || offer.stage === 'Archive') { <a [routerLink]="['/offers', offer.id, 'recap']"><i>&#10003;</i> Recap</a><a [routerLink]="['/offers', offer.id]"><i>&#9875;</i> Operative</a> }

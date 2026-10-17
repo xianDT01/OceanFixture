@@ -117,6 +117,7 @@ public sealed class PersistenceTests : IDisposable
     [Theory]
     [InlineData("create")]
     [InlineData("select")]
+    [InlineData("bid")]
     [InlineData("counter")]
     [InlineData("negotiated-counter")]
     [InlineData("confirm")]
@@ -126,7 +127,7 @@ public sealed class PersistenceTests : IDisposable
         using var persistence = new SqliteStatePersistence(DatabasePath);
         var store = new DemoStore(persistence);
         var controller = new OffersController(store);
-        var offer = store.Offers.Single(item => item.Reference == (operation == "select" ? 2941 : 2942));
+        var offer = store.Offers.Single(item => item.Reference == (operation is "select" or "bid" ? 2941 : 2942));
         if (operation == "second-confirmation")
             AssertOk(controller.ConfirmRecap(offer.Id, new("charterer", "Alice", offer.RecapVersion)));
         var before = Snapshot(store);
@@ -138,6 +139,7 @@ public sealed class PersistenceTests : IDisposable
             {
                 case "create": controller.Create(CargoRequest()); break;
                 case "select": controller.SelectFirmOffer(offer.Id, 120, new(offer.RecapVersion)); break;
+                case "bid": controller.SubmitBid(offer.Id, new(offer.Terms with { Freight = 100 }, offer.RecapVersion, 120)); break;
                 case "counter": controller.Counter(offer.Id, offer.Terms with { Freight = 100 }); break;
                 case "negotiated-counter":
                     controller.SendNegotiatedCounter(offer.Id,
@@ -147,6 +149,34 @@ public sealed class PersistenceTests : IDisposable
         });
         Assert.Equal(before, Snapshot(store));
         Assert.Equal(before, JsonSerializer.Serialize(persistence.Load()));
+    }
+
+    [Fact]
+    public void Submitted_and_updated_bid_survives_restart_without_changing_original_cargo()
+    {
+        var id = WithStore(store =>
+        {
+            var offer = store.Offers.Single(item => item.Reference == 2943);
+            AssertOk(new OffersController(store).SubmitBid(offer.Id, new(offer.Terms with { Freight = 1000 }, offer.RecapVersion, 119)));
+            return Assert.Single(offer.Bids).Id;
+        });
+        WithStore(store =>
+        {
+            var offer = store.Offers.Single(item => item.Reference == 2943);
+            Assert.Equal(id, Assert.Single(offer.Bids).Id);
+            AssertOk(new OffersController(store).SubmitBid(offer.Id, new(offer.Terms with { Freight = 2000 }, offer.RecapVersion, 119)));
+            return true;
+        });
+        WithStore(store =>
+        {
+            var offer = store.Offers.Single(item => item.Reference == 2943);
+            Assert.Equal(OfferStage.CargoOrder, offer.Stage);
+            Assert.Null(offer.Terms.Freight);
+            var bid = Assert.Single(offer.Bids);
+            Assert.Equal(id, bid.Id);
+            Assert.Equal(2000, bid.Terms.Freight);
+            return true;
+        });
     }
 
     [Fact]
