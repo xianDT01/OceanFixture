@@ -15,7 +15,7 @@ Recrear el flujo de gestion de embarques de la plataforma original, conservando 
 | Alta de carga | Tres pasos, catalogo de armadores, validacion, referencia del servidor y persistencia | No envia correos; borradores pendientes |
 | Ofertas del armador | Envio y actualizacion de la propia oferta para una carga abierta e invitada | Solo se conserva la oferta vigente; faltan historial, declinacion y fechas limite |
 | Comparativa | Datos de la API, diferencias entre propuestas y seleccion del armador | Recordatorios, cancelacion, archivo, chat y notas |
-| Negociacion | Condiciones, clausulas propias, contraofertas, control de version, turnos obligatorios e historial persistente | Aceptacion por campo, borradores y auditoria inalterable |
+| Negociacion | Condiciones, clausulas propias, contraofertas, control de version, turnos obligatorios, historial y borradores privados persistentes | Aceptacion por campo, autoguardado y auditoria inalterable |
 | Recap | Doble confirmacion de la misma version, firmante de la sesion y conservacion tras reinicio | Identidad verificada, firma contractual de produccion, comision y auditoria inalterable |
 | Roles | Permisos de cargador, armador y administrador aplicados en API e interfaz | Administracion completa de usuarios, empresas y membresias |
 | Persistencia | SQLite local con transacciones y recuperacion ante fallo de escritura | Modelo relacional normalizado, migraciones, varias instancias y copias automaticas |
@@ -44,6 +44,14 @@ Seleccionar una oferta firm deja el primer turno al armador elegido. Cada contra
 
 Cada nueva contraoferta guarda numero, autor de la sesion, parte, fecha UTC y una copia de todas las condiciones y clausulas anteriores/enviadas. El historial desplegable muestra los valores y resalta las condiciones modificadas. Se conserva en SQLite y se revierte junto con la operacion si falla la escritura. No se reconstruyen acciones demo antiguas ni revisiones previas de propuestas iniciales; tampoco hay todavia aceptacion por campo. Es un registro local, no una auditoria a prueba de manipulaciones. Anadir el historial no invalida confirmaciones existentes.
 
+## Borradores privados de negociacion
+
+Un borrador vigente por usuario y operacion, guardado mediante accion explicita y solo durante el turno propio. Admite campos numericos incompletos porque no modifica las condiciones negociadas. Guarda los campos del formulario y las clausulas propias, nunca cambia confirmaciones, turno ni version contractual. El autor y la parte se toman de la sesion; la contraparte, otros usuarios y el administrador no ven su contenido. Las respuestas generales de ofertas/dashboard no incluyen borradores.
+
+Al volver se ofrece restaurar explicitamente o eliminar el borrador. Restaurar reemplaza los campos editados y solo se permite si coinciden las versiones y corresponde el turno. Un borrador antiguo no se mezcla automaticamente con condiciones nuevas. Eliminar no cambia los campos actuales. Tras enviar correctamente se elimina el borrador del remitente de forma transaccional; los borradores de otros usuarios conservan su version de origen y pueden quedar obsoletos.
+
+Persisten entre reinicios en SQLite. Fallos de escritura no se anuncian como exito y restauran el estado previo. No hay autoguardado, historial de revisiones de borrador, aviso al abandonar sin guardar ni fusion de ediciones entre pestanas; prevalece el ultimo guardado correcto del mismo usuario. La privacidad se aplica en la API, no significa cifrado frente al operador de la base local.
+
 ## Seguimiento maritimo: alcance acordado
 
 Las referencias aportadas por el usuario muestran un mapa asociado al embarque, un panel del buque y una pantalla Operative con comunicaciones y Recap. No debe considerarse terminado con el simple mapa geografico.
@@ -64,4 +72,4 @@ El entorno original no respondio al intento de revision del 16/10/2026. Las zona
 
 ## Siguientes incrementos
 
-Completar aceptacion por campo y borradores de negociacion, administracion/perfiles y clausulas reutilizables; despues comunicaciones/documentos y operativa del embarque. La identidad de produccion, el modelo de datos definitivo y la comprobacion visual siguen siendo tareas transversales. El orden puede ajustarse segun dependencias y referencias disponibles.
+Completar aceptacion por campo, administracion/perfiles y clausulas reutilizables; despues comunicaciones/documentos y operativa del embarque. La identidad de produccion, el modelo de datos definitivo y la comprobacion visual siguen siendo tareas transversales. El orden puede ajustarse segun dependencias y referencias disponibles.

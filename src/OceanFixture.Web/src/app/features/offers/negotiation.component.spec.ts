@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { ActivatedRoute, convertToParamMap, provideRouter } from '@angular/router';
 import { of, Subject, throwError } from 'rxjs';
-import { CargoOffer, VoyageTerms } from '../../core/models';
+import { CargoOffer, NegotiationDraft, VoyageTerms } from '../../core/models';
 import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
 import { NegotiationComponent } from './negotiation.component';
 
@@ -15,7 +15,8 @@ describe('Negotiation API workflow', () => {
         canConfirmAsShipowner: true, canEditChartererClauses: true, canEditShipownerClauses: true },
       chartererClauses: ['Existing clause'], shipownerClauses: [],
       terms: { quantity: 4000, quantityUnit: 'MT', freightCurrency: 'EUR', charterer: 'Customer', commodity: 'Steel' } as VoyageTerms };
-    api = jasmine.createSpyObj('api', ['recap', 'sendCounter']);
+    api = jasmine.createSpyObj('api', ['recap', 'sendCounter', 'negotiationDraft', 'saveNegotiationDraft', 'deleteNegotiationDraft']);
+    api.negotiationDraft.and.returnValue(of(null));
     api.recap.and.returnValue(of(offer));
     await TestBed.configureTestingModule({ imports: [NegotiationComponent], providers: [provideRouter([]),
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: convertToParamMap({ id: '2942' }) } } },
@@ -99,7 +100,9 @@ describe('Negotiation API workflow', () => {
     expect(fixture.nativeElement.querySelector('input').disabled).toBeTrue();
     fixture.componentInstance.sendCounter();
     fixture.componentInstance.addClause('charterer');
+    fixture.componentInstance.saveDraft();
     expect(api.sendCounter).not.toHaveBeenCalled();
+    expect(api.saveNegotiationDraft).not.toHaveBeenCalled();
     expect(fixture.componentInstance.chartererClauses).toEqual(['Existing clause']);
   });
 
@@ -124,5 +127,73 @@ describe('Negotiation API workflow', () => {
     component.sendCounter();
     component.reload();
     expect(api.recap).toHaveBeenCalledTimes(1);
+  });
+
+  const savedDraft = (version = 'v1'): NegotiationDraft => ({ userId: 'server-user', party: 'Charterer',
+    baseVersion: version, savedAt: '2026-10-17T12:00:00Z', values: { freight: 'unfinished-' }, ownClauses: ['Private'] });
+
+  it('offers explicit restoration without automatically replacing form values', () => {
+    api.negotiationDraft.and.returnValue(of(savedDraft()));
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    expect(component.rows.find(row => row.key === 'freight')!.value).toBe('');
+    component.restoreDraft();
+    expect(component.rows.find(row => row.key === 'freight')!.value).toBe('unfinished-');
+    expect(component.chartererClauses).toEqual(['Private']);
+    expect(component.shipownerClauses).toEqual([]);
+    expect(offer.chartererClauses).toEqual(['Existing clause']);
+    expect(api.sendCounter).not.toHaveBeenCalled();
+  });
+
+  it('saves incomplete fields without sending or changing the counter', () => {
+    api.saveNegotiationDraft.and.returnValue(of(savedDraft()));
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.rows.find(row => row.key === 'freight')!.value = 'unfinished-';
+    component.saveDraft();
+    const args = api.saveNegotiationDraft.calls.mostRecent().args;
+    expect(args[1]).toBe('v1');
+    expect(args[2]['freight']).toBe('unfinished-');
+    expect(args[3]).toEqual(['Existing clause']);
+    expect(component.message).toContain('Nothing has been sent');
+    expect(component.counter).toBe(2);
+    expect(api.sendCounter).not.toHaveBeenCalled();
+  });
+
+  it('refuses restoring a stale draft', () => {
+    api.negotiationDraft.and.returnValue(of(savedDraft('old')));
+    const fixture = TestBed.createComponent(NegotiationComponent);
+    fixture.detectChanges();
+    fixture.componentInstance.restoreDraft();
+    expect(fixture.componentInstance.draftIsCurrent).toBeFalse();
+    expect(fixture.componentInstance.rows.find(row => row.key === 'freight')!.value).toBe('');
+    expect(fixture.nativeElement.textContent).toContain('Outdated');
+  });
+
+  it('keeps edits and previous draft when saving fails', () => {
+    api.negotiationDraft.and.returnValue(of(savedDraft()));
+    api.saveNegotiationDraft.and.returnValue(throwError(() => ({ status: 409 })));
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.rows[0].value = 'Edited';
+    component.saveDraft();
+    expect(component.rows[0].value).toBe('Edited');
+    expect(component.draft?.values['freight']).toBe('unfinished-');
+    expect(component.error).toContain('not saved');
+    expect(component.saving).toBeFalse();
+  });
+
+  it('deletes the saved draft without changing current edits', () => {
+    api.negotiationDraft.and.returnValue(of(savedDraft()));
+    api.deleteNegotiationDraft.and.returnValue(of(undefined));
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.rows[0].value = 'Edited';
+    component.deleteDraft();
+    expect(component.draft).toBeUndefined();
+    expect(component.rows[0].value).toBe('Edited');
+  });
+
+  it('does not request private drafts for the administrator', () => {
+    offer.permissions!.canEditChartererClauses = false;
+    offer.permissions!.canEditShipownerClauses = false;
+    TestBed.createComponent(NegotiationComponent);
+    expect(api.negotiationDraft).not.toHaveBeenCalled();
   });
 });

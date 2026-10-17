@@ -35,12 +35,20 @@ Arrancar API en Development y Angular segun el [README](../README.md). Abrir `ht
 3. Como cargador, debe aparecer solo su boton de confirmacion. Confirmarlo no cierra todavia la operacion.
 4. Cambiar al armador seleccionado y confirmar su parte. La operacion debe pasar a Operative.
 5. Cambiar al administrador: puede consultar, pero no firmar por una u otra parte.
-6. La aceptacion individual por campo y los borradores todavia no estan implementados. El historial de operaciones antiguas puede estar vacio; no se reconstruye actividad anterior.
+6. La aceptacion individual por campo todavia no esta implementada. El historial de operaciones antiguas puede estar vacio; no se reconstruye actividad anterior.
+
+### Borrador privado
+
+1. En el turno propio, escribir un flete incompleto (por ejemplo `123-`) y modificar una clausula propia. Pulsar `SAVE DRAFT`: debe anunciar guardado privado, no envio. Contador, turno y condiciones enviadas no deben cambiar.
+2. Salir y volver a la negociacion. Debe mostrar las condiciones enviadas y el aviso del borrador, sin restaurarlo automaticamente. Pulsar `RESTORE DRAFT (REPLACE EDITS)` y comprobar campos/clausulas.
+3. Cambiar al otro participante o al administrador: no debe ver el borrador privado.
+4. Con el mismo usuario, eliminar el borrador: desaparece el guardado, pero los campos actuales no cambian. Guardar otro, completar valores validos y enviar contraoferta: desaparece el borrador del remitente.
+5. Si otro usuario del mismo lado cambia la negociacion, al volver el borrador anterior debe indicar que esta obsoleto y no permitir restaurarlo. Puede eliminarse sin tocar la negociacion. No hay autoguardado ni fusion de versiones.
 
 ## 5. Persistencia y sesiones
 
 1. Apagar y reiniciar la API con la misma ruta de base de datos.
-2. Volver a elegir perfil: las sesiones anteriores deben caducar, pero la carga, propuestas, condiciones, turnos, historial y confirmaciones deben conservarse.
+2. Volver a elegir perfil: las sesiones anteriores deben caducar, pero la carga, propuestas, condiciones, turnos, historial, borradores privados y confirmaciones deben conservarse.
 3. Crear otra carga: la nueva referencia no debe colisionar con las existentes ni duplicarse la semilla demo.
 
 ## 6. Casos negativos

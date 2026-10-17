@@ -6,6 +6,13 @@
   @if (offer; as current) {
   <section class="page-body" [attr.aria-busy]="saving">
     <div class="negotiation-head"><div><span>COUNTER {{ counter }}</span><h2>{{ current.customerReference }}</h2><p>{{ current.terms.charterer }}</p></div><div class="turn-badge"><small>SHIFT</small><b>{{ turn }}</b></div></div>
+    @if (draft; as saved) {
+      <p class="turn-notice" role="status">Private draft: {{ saved.savedAt | date:'dd/MM/yyyy HH:mm':'UTC' }} UTC.
+        @if (!draftIsCurrent) { <span>Outdated: the negotiation has changed. This draft cannot be restored.</span> }
+        <button (click)="restoreDraft()" [disabled]="!canSend || !draftIsCurrent">RESTORE DRAFT (REPLACE EDITS)</button>
+        <button (click)="deleteDraft()" [disabled]="saving || loading">DELETE SAVED DRAFT</button>
+      </p>
+    }
     @if (current.stage === 'Negotiation' && !current.permissions?.canSendCounter) {
       <p class="turn-notice" role="status">Read-only. Current turn: {{ turn }}. <button (click)="reload()" [disabled]="saving || loading">REFRESH</button></p>
     }
@@ -40,7 +47,7 @@
         </details>
       } @empty { <p>No recorded counter offers. Earlier demo activity has not been reconstructed.</p> }
     </details>
-    <div class="page-actions"><button class="secondary" disabled title="Not implemented yet">SAVE DRAFT</button><button class="primary" [disabled]="!canSend" (click)="sendCounter()">SEND COUNTER OFFER</button><button class="success" [disabled]="saving || loading || hasChanges" [routerLink]="['/offers', id, 'recap']" title="Send edited conditions before preparing recap">PREPARE RECAP</button></div>
+    <div class="page-actions"><button class="secondary" [disabled]="!canSend" (click)="saveDraft()" title="Save privately without sending">SAVE DRAFT</button><button class="primary" [disabled]="!canSend" (click)="sendCounter()">SEND COUNTER OFFER</button><button class="success" [disabled]="saving || loading || hasChanges" [routerLink]="['/offers', id, 'recap']" title="Send edited conditions before preparing recap">PREPARE RECAP</button></div>
   </section>
   }
 </section>

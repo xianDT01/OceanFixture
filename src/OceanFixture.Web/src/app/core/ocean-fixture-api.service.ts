@@ -1,7 +1,7 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
-import { CargoOffer, Company, CreateCargoOfferRequest, DashboardLane, VoyageTerms } from './models';
+import { CargoOffer, Company, CreateCargoOfferRequest, DashboardLane, NegotiationDraft, VoyageTerms } from './models';
 import { API_URL } from './session.service';
 
 @Injectable({ providedIn: 'root' })
@@ -21,6 +21,15 @@ export class OceanFixtureApiService {
   sendCounter(id: string, terms: VoyageTerms, chartererClauses: string[], shipownerClauses: string[], versionHash: string): Observable<CargoOffer> {
     return this.http.post<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/negotiation/counter`,
       { terms, chartererClauses, shipownerClauses, versionHash });
+  }
+  negotiationDraft(id: string): Observable<NegotiationDraft | null> {
+    return this.http.get<NegotiationDraft | null>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/negotiation/draft`);
+  }
+  saveNegotiationDraft(id: string, baseVersion: string, values: Record<string, string>, ownClauses: string[]): Observable<NegotiationDraft> {
+    return this.http.put<NegotiationDraft>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/negotiation/draft`, { baseVersion, values, ownClauses });
+  }
+  deleteNegotiationDraft(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/negotiation/draft`);
   }
   confirmRecap(id: string, party: string, versionHash: string): Observable<CargoOffer> {
     return this.http.post<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/recap/confirm`, { party, versionHash });

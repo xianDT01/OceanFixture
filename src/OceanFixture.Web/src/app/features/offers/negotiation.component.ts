@@ -3,7 +3,8 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CargoOffer, NegotiationEntry, VoyageTerms } from '../../core/models';
+import { CargoOffer, NegotiationDraft, NegotiationEntry, VoyageTerms } from '../../core/models';
+import { map, of, switchMap } from 'rxjs';
 import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
 
 interface NegotiationRow { key: keyof VoyageTerms; label: string; original: string; value: string; multiline?: boolean; }
@@ -18,6 +19,8 @@ export class NegotiationComponent {
   private readonly destroyRef = inject(DestroyRef);
   readonly id = this.route.snapshot.paramMap.get('id') ?? '';
   offer?: CargoOffer;
+  draft?: NegotiationDraft;
+  get draftIsCurrent(): boolean { return !!this.draft && this.draft.baseVersion === this.offer?.recapVersion; }
   loading = true;
   saving = false;
   error = '';
@@ -50,8 +53,9 @@ export class NegotiationComponent {
     this.loading = true;
     this.error = '';
     this.message = '';
-    this.api.recap(this.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-      next: offer => { this.loadOffer(offer); this.loading = false; },
+    this.api.recap(this.id).pipe(switchMap(offer => (offer.permissions?.canEditChartererClauses || offer.permissions?.canEditShipownerClauses
+      ? this.api.negotiationDraft(offer.id) : of(null)).pipe(map(draft => ({ offer, draft })))), takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: ({ offer, draft }) => { this.loadOffer(offer); this.draft = draft ?? undefined; this.loading = false; },
       error: () => { this.error = 'Unable to load negotiation. Please try again.'; this.loading = false; }
     });
   }
@@ -91,7 +95,7 @@ export class NegotiationComponent {
     this.message = '';
     this.api.sendCounter(this.offer.id, terms, [...this.chartererClauses], [...this.shipownerClauses], this.offer.recapVersion)
       .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
-        next: offer => { this.loadOffer(offer); this.saving = false; this.message = 'Counter offer saved.'; },
+        next: offer => { this.loadOffer(offer); this.draft = undefined; this.saving = false; this.message = 'Counter offer saved.'; },
         error: response => { this.saving = false; this.error = response.status === 409
           ? 'The offer or negotiation turn has changed. Reload before sending.' : response.status === 403
           ? 'You cannot send on this turn. Reload to check the current negotiation.' : 'Counter offer was not saved. Please try again.'; }
@@ -101,5 +105,35 @@ export class NegotiationComponent {
   addClause(side: 'charterer' | 'shipowner'): void {
     if (!this.canEditClauses(side)) return;
     (side === 'charterer' ? this.chartererClauses : this.shipownerClauses).push('New clause');
+  }
+
+  saveDraft(): void {
+    if (!this.canSend || !this.offer?.recapVersion) return;
+    const values = Object.fromEntries(this.rows.map(row => [row.key, row.value]));
+    const ownClauses = this.offer.permissions?.canEditChartererClauses ? this.chartererClauses : this.shipownerClauses;
+    this.saving = true; this.error = ''; this.message = '';
+    this.api.saveNegotiationDraft(this.offer.id, this.offer.recapVersion, values, [...ownClauses])
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: draft => { this.draft = draft; this.saving = false; this.message = 'Private draft saved. Nothing has been sent.'; },
+        error: response => { this.saving = false; this.error = response.status === 409 || response.status === 403
+          ? 'The negotiation or turn has changed. Draft was not saved; your edits remain here.' : 'Draft was not saved. Your edits remain here.'; }
+      });
+  }
+
+  restoreDraft(): void {
+    if (!this.canSend || !this.draftIsCurrent || !this.draft) return;
+    for (const row of this.rows) if (Object.prototype.hasOwnProperty.call(this.draft.values, row.key)) row.value = this.draft.values[row.key];
+    if (this.draft.party === 'Charterer' && this.offer?.permissions?.canEditChartererClauses) this.chartererClauses = [...this.draft.ownClauses];
+    if (this.draft.party === 'Shipowner' && this.offer?.permissions?.canEditShipownerClauses) this.shipownerClauses = [...this.draft.ownClauses];
+    this.message = 'Private draft restored. Review before sending.';
+  }
+
+  deleteDraft(): void {
+    if (!this.draft || this.saving || this.loading || !this.offer) return;
+    this.saving = true; this.error = ''; this.message = '';
+    this.api.deleteNegotiationDraft(this.offer.id).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+      next: () => { this.draft = undefined; this.saving = false; this.message = 'Saved draft deleted. Current edits have not been changed.'; },
+      error: () => { this.saving = false; this.error = 'Unable to delete saved draft.'; }
+    });
   }
 }

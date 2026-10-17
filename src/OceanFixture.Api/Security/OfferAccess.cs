@@ -27,6 +27,8 @@ public sealed class OfferAccess(ClaimsPrincipal user)
     public CargoOffer Project(CargoOffer offer)
     {
         offer.PreserveVersionForReadOnlyProjection();
+        // Drafts are private even from the counterpart and the demo administrator.
+        offer.NegotiationDrafts.Clear();
         if (IsShipowner)
         {
             offer.Bids.RemoveAll(bid => bid.ShipownerId != CompanyId);

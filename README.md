@@ -98,9 +98,11 @@ El alta de carga usa el catalogo de armadores aprobados, conserva los datos entr
 
 La comparativa carga las ofertas de armadores desde la API, resalta diferencias y selecciona una oferta firm con control de version. Solo permite seleccionar mientras la operacion esta en CargoOrder; al guardar abre la negociacion con las condiciones del armador elegido. No reabre operaciones negociadas, operativas o archivadas. La referencia demo 2941 comienza en CargoOrder y contiene tres ofertas para probar este recorrido. Chat, notas, recordatorios y archivo de la comparativa siguen pendientes.
 
-La negociacion carga los datos de cada oferta desde la API y envia condiciones y clausulas con control de version. Si otra peticion cambia la oferta, el servidor rechaza el envio con HTTP 409; los cambios escritos se mantienen en pantalla. Preparar el Recap requiere enviar primero los cambios. Borradores, chat y documentos de esta pantalla siguen pendientes y sus botones estan deshabilitados. El almacenamiento es local y la identidad sigue siendo de demostracion.
+La negociacion carga los datos de cada oferta desde la API y envia condiciones y clausulas con control de version. Si otra peticion cambia la oferta, el servidor rechaza el envio con HTTP 409; los cambios escritos se mantienen en pantalla. Preparar el Recap requiere enviar primero los cambios. Chat y documentos de esta pantalla siguen pendientes y sus botones estan deshabilitados. El almacenamiento es local y la identidad sigue siendo de demostracion.
 
 Los turnos son obligatorios: tras seleccionar la oferta comienza el armador y cada contraoferta cambia el turno. Los permisos de la API dejan la pantalla en lectura al otro participante y al administrador. Cada envio guarda historial con autor de la sesion, fecha UTC y condiciones/clausulas antes y despues; se consulta desplegando `COUNTER OFFER HISTORY`. No se inventa historial para acciones anteriores a esta funcion. El historial se conserva en SQLite, pero no es una auditoria inalterable. Confirmar la version vigente del Recap sigue permitido a cada parte independientemente del turno.
+
+`SAVE DRAFT` guarda un borrador privado por usuario y operacion, incluidas cantidades/importes aun incompletos y las clausulas propias. No envia nada ni cambia turno, version contractual o confirmaciones. Al volver se ofrece restaurarlo explicitamente; restaurar reemplaza los campos editados de la pantalla. No se puede restaurar un borrador basado en una version antigua. Se puede eliminar sin tocar el formulario; enviar correctamente la contraoferta elimina el borrador del remitente en la misma transaccion. Los borradores se conservan en SQLite, no en el navegador, y no se exponen al otro participante ni al administrador. No hay autoguardado ni fusion entre versiones: en dos pestanas del mismo usuario prevalece el ultimo guardado correcto del borrador.
 
 - `GET /v1/api/offers/dashboard`
 - `GET /v1/api/offers`
@@ -111,6 +113,7 @@ Los turnos son obligatorios: tras seleccionar la oferta comienza el armador y ca
 - `POST /v1/api/offers/{id}/firm-offer/{shipownerId}` (requiere `{ "versionHash": "version recibida en recapVersion" }`)
 - `POST /v1/api/offers/{id}/counter` (endpoint antiguo: HTTP 410; usar negociacion con version)
 - `POST /v1/api/offers/{id}/negotiation/counter` (condiciones, clausulas y version)
+- `GET`, `PUT`, `DELETE /v1/api/offers/{id}/negotiation/draft` (borrador propio; PUT recibe `baseVersion`, `values` como cadenas y `ownClauses`; autor y parte proceden de la sesion)
 - `POST /v1/api/offers/{id}/recap/confirm`
 - `GET /v1/api/companies`
 - `GET /v1/api/demo-session/accounts`, `POST /v1/api/demo-session/login`, `GET /v1/api/demo-session/me`, `POST /v1/api/demo-session/logout`

@@ -20,6 +20,31 @@ public sealed class PersistenceTests : IDisposable
     }
 
     [Fact]
+    public void Private_draft_survives_restart_and_save_delete_failures_roll_back()
+    {
+        var id = WithStore(store =>
+        {
+            var offer = store.Offers.Single(item => item.Reference == 2942);
+            var result = NegotiationDraftTests.Controller(store).Save(offer.Id, new(offer.RecapVersion,
+                new() { ["freight"] = "unfinished-" }, ["Private"]));
+            Assert.IsType<OkObjectResult>(result.Result);
+            return offer.Id;
+        });
+        using var persistence = new SqliteStatePersistence(DatabasePath);
+        var store = new DemoStore(persistence);
+        Assert.Equal("unfinished-", store.Offers.Single(item => item.Id == id).NegotiationDrafts.Single().Values["freight"]);
+        ExecuteSql("CREATE TRIGGER RejectDraftWrite BEFORE UPDATE ON ApplicationState BEGIN SELECT RAISE(ABORT, 'test write failure'); END;");
+        var before = Snapshot(store);
+        var controller = NegotiationDraftTests.Controller(store);
+        Assert.Throws<PersistenceWriteException>(() => controller.Delete(id));
+        Assert.Equal(before, Snapshot(store));
+        var version = store.Offers.Single(item => item.Id == id).RecapVersion;
+        Assert.Throws<PersistenceWriteException>(() => controller.Save(id, new(version, new() { ["freight"] = "123" }, [])));
+        Assert.Equal(before, Snapshot(store));
+        Assert.Equal(before, JsonSerializer.Serialize(persistence.Load()));
+    }
+
+    [Fact]
     public void Restart_preserves_seed_ids_bids_versions_and_companies_without_duplicates()
     {
         var before = WithStore(Snapshot);
@@ -135,6 +160,9 @@ public sealed class PersistenceTests : IDisposable
         var offer = store.Offers.Single(item => item.Reference == (operation is "select" or "bid" ? 2941 : 2942));
         if (operation == "second-confirmation")
             AssertOk(controller.ConfirmRecap(offer.Id, new("charterer", "Alice", offer.RecapVersion)));
+        if (operation == "negotiated-counter")
+            Assert.IsType<OkObjectResult>(NegotiationDraftTests.Controller(store, "Alice").Save(offer.Id,
+                new(offer.RecapVersion, new() { ["freight"] = "unfinished-" }, ["Private"])).Result);
         var before = Snapshot(store);
         // A real SQLite write failure exercises transaction rollback, not only a mock.
         ExecuteSql("CREATE TRIGGER RejectWrite BEFORE UPDATE ON ApplicationState BEGIN SELECT RAISE(ABORT, 'test write failure'); END;");

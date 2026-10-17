@@ -163,6 +163,7 @@ public sealed class OffersController(DemoStore store) : ControllerBase
                 offer.ShipownerClauses.Clear();
                 offer.ShipownerClauses.AddRange(request.ShipownerClauses);
                 ApplyCounter(offer, request.Terms);
+                offer.NegotiationDrafts.RemoveAll(draft => draft.UserId == request.SubmittedBy);
                 offer.NegotiationHistory.Add(new(Guid.NewGuid(), offer.Counter, request.Party, request.SubmittedBy,
                     DateTimeOffset.UtcNow, before,
                     new(offer.Terms, offer.ChartererClauses.ToArray(), offer.ShipownerClauses.ToArray())));

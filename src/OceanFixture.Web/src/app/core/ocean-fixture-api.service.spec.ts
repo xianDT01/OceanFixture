@@ -66,4 +66,23 @@ describe('OceanFixtureApiService negotiation', () => {
       .flush({}, { status: 409, statusText: 'Conflict' });
     expect(status).toBe(409);
   });
+
+  it('saves private draft without a client-controlled author or party', () => {
+    api.saveNegotiationDraft('offer-id', 'v1', { freight: 'unfinished-' }, ['Private']).subscribe();
+    const request = http.expectOne('http://localhost:5100/v1/api/offers/offer-id/negotiation/draft');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ baseVersion: 'v1', values: { freight: 'unfinished-' }, ownClauses: ['Private'] });
+    request.flush({});
+  });
+
+  it('reads and deletes only the session users draft', () => {
+    api.negotiationDraft('offer-id').subscribe(value => expect(value).toBeNull());
+    const read = http.expectOne('http://localhost:5100/v1/api/offers/offer-id/negotiation/draft');
+    expect(read.request.method).toBe('GET');
+    read.flush(null);
+    api.deleteNegotiationDraft('offer-id').subscribe();
+    const remove = http.expectOne('http://localhost:5100/v1/api/offers/offer-id/negotiation/draft');
+    expect(remove.request.method).toBe('DELETE');
+    remove.flush(null);
+  });
 });

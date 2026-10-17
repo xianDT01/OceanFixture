@@ -17,6 +17,8 @@ export interface CargoOffer {
 }
 
 export interface NegotiationSnapshot { terms: VoyageTerms; chartererClauses: string[]; shipownerClauses: string[]; }
+export interface NegotiationDraft { userId: string; party: string; baseVersion: string; savedAt: string;
+  values: Record<string, string>; ownClauses: string[]; }
 export interface NegotiationEntry { id: string; counter: number; party: string; submittedBy: string;
   submittedAt: string; before: NegotiationSnapshot; after: NegotiationSnapshot; }
 
