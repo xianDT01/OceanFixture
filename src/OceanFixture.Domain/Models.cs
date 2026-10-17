@@ -61,6 +61,7 @@ public sealed record NegotiationEntry(Guid Id, int Counter, string Party, string
     DateTimeOffset SubmittedAt, NegotiationSnapshot Before, NegotiationSnapshot After);
 public sealed record NegotiationDraft(string UserId, string Party, string BaseVersion, DateTimeOffset SavedAt,
     Dictionary<string, string> Values, string[] OwnClauses);
+public sealed record FieldAcceptance(string Field, string Party, string AcceptedBy, DateTimeOffset AcceptedAt, string ValueHash);
 
 public sealed class CargoOffer
 {
@@ -101,6 +102,7 @@ public sealed class CargoOffer
     // Audit data is deliberately excluded from RecapVersion to preserve existing signatures.
     public List<NegotiationEntry> NegotiationHistory { get; init; } = [];
     public List<NegotiationDraft> NegotiationDrafts { get; init; } = [];
+    public List<FieldAcceptance> FieldAcceptances { get; init; } = [];
 }
 
 public sealed record DashboardLane(string Key, string Label, IReadOnlyCollection<CargoOffer> Offers);

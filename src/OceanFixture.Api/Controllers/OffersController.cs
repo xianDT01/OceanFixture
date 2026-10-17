@@ -202,6 +202,7 @@ public sealed class OffersController(DemoStore store) : ControllerBase
     private static void ApplyCounter(CargoOffer offer, VoyageTerms terms)
     {
         offer.Terms = terms;
+        NegotiationFields.RemoveChangedAcceptances(offer);
         offer.Confirmations.Clear();
         offer.Stage = OfferStage.Negotiation;
         offer.Counter++;

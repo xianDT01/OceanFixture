@@ -15,7 +15,7 @@ describe('Negotiation API workflow', () => {
         canConfirmAsShipowner: true, canEditChartererClauses: true, canEditShipownerClauses: true },
       chartererClauses: ['Existing clause'], shipownerClauses: [],
       terms: { quantity: 4000, quantityUnit: 'MT', freightCurrency: 'EUR', charterer: 'Customer', commodity: 'Steel' } as VoyageTerms };
-    api = jasmine.createSpyObj('api', ['recap', 'sendCounter', 'negotiationDraft', 'saveNegotiationDraft', 'deleteNegotiationDraft']);
+    api = jasmine.createSpyObj('api', ['recap', 'sendCounter', 'negotiationDraft', 'saveNegotiationDraft', 'deleteNegotiationDraft', 'setFieldAcceptance']);
     api.negotiationDraft.and.returnValue(of(null));
     api.recap.and.returnValue(of(offer));
     await TestBed.configureTestingModule({ imports: [NegotiationComponent], providers: [provideRouter([]),
@@ -195,5 +195,64 @@ describe('Negotiation API workflow', () => {
     offer.permissions!.canEditShipownerClauses = false;
     TestBed.createComponent(NegotiationComponent);
     expect(api.negotiationDraft).not.toHaveBeenCalled();
+  });
+
+  it('accepts sent conditions even while waiting and prevents duplicate requests', () => {
+    offer.permissions!.canSendCounter = false;
+    offer.negotiationTurn = 'Shipowner';
+    const pending = new Subject<CargoOffer>();
+    api.setFieldAcceptance.and.returnValue(pending);
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.toggleAcceptance('laycan'); component.toggleAcceptance('laycan');
+    expect(api.setFieldAcceptance).toHaveBeenCalledOnceWith('offer-id', 'laycan', 'v1', true);
+    expect(component.acceptance('laycan', 'Charterer')).toBeUndefined();
+    pending.next({ ...offer, fieldAcceptances: [{ field: 'laycan', party: 'Charterer', acceptedBy: 'server-user',
+      acceptedAt: '2026-10-17T12:00:00Z', valueHash: 'hash' }] });
+    expect(component.acceptance('laycan', 'Charterer')?.acceptedBy).toBe('server-user');
+    expect(component.counter).toBe(2);
+    expect(component.message).toContain('Recap');
+  });
+
+  it('cannot accept unsent form edits or act as an administrator', () => {
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.rows[0].value = 'Unsent';
+    component.toggleAcceptance('charterer');
+    expect(api.setFieldAcceptance).not.toHaveBeenCalled();
+    component.rows[0].value = 'Customer';
+    offer.permissions!.canConfirmAsCharterer = false;
+    offer.permissions!.canConfirmAsShipowner = false;
+    component.toggleAcceptance('charterer');
+    expect(api.setFieldAcceptance).not.toHaveBeenCalled();
+  });
+
+  it('withdraws only its own acceptance and renders counterpart status', () => {
+    offer.permissions!.canConfirmAsShipowner = false;
+    const entry = { field: 'laycan', party: 'Charterer' as const, acceptedBy: 'server-user', acceptedAt: '2026-10-17T12:00:00Z', valueHash: 'hash' };
+    offer.fieldAcceptances = [entry, { ...entry, party: 'Shipowner' }];
+    api.setFieldAcceptance.and.returnValue(of({ ...offer, fieldAcceptances: [offer.fieldAcceptances[1]] }));
+    const fixture = TestBed.createComponent(NegotiationComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelectorAll('.accepted').length).toBe(2);
+    fixture.componentInstance.toggleAcceptance('laycan');
+    expect(api.setFieldAcceptance).toHaveBeenCalledWith('offer-id', 'laycan', 'v1', false);
+    expect(fixture.componentInstance.acceptance('laycan', 'Charterer')).toBeUndefined();
+    expect(fixture.componentInstance.acceptance('laycan', 'Shipowner')).toBeDefined();
+  });
+
+  it('does not invent success on an acceptance version conflict', () => {
+    api.setFieldAcceptance.and.returnValue(throwError(() => ({ status: 409 })));
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.toggleAcceptance('laycan');
+    expect(component.acceptance('laycan', 'Charterer')).toBeUndefined();
+    expect(component.error).toContain('Reload');
+    expect(component.saving).toBeFalse();
+  });
+
+  it('shows currency and units for accepted monetary and quantity conditions', () => {
+    offer.terms.freightUnit = 'LPSM'; offer.terms.demurrageUnit = 'PDPR';
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    expect(component.fieldUnit('freight')).toBe('EUR / LPSM');
+    expect(component.fieldUnit('quantity')).toBe('MT');
+    expect(component.fieldUnit('demurrage')).toBe('PDPR');
   });
 });

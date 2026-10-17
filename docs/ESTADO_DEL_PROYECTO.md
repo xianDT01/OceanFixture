@@ -15,7 +15,7 @@ Recrear el flujo de gestion de embarques de la plataforma original, conservando 
 | Alta de carga | Tres pasos, catalogo de armadores, validacion, referencia del servidor y persistencia | No envia correos; borradores pendientes |
 | Ofertas del armador | Envio y actualizacion de la propia oferta para una carga abierta e invitada | Solo se conserva la oferta vigente; faltan historial, declinacion y fechas limite |
 | Comparativa | Datos de la API, diferencias entre propuestas y seleccion del armador | Recordatorios, cancelacion, archivo, chat y notas |
-| Negociacion | Condiciones, clausulas propias, contraofertas, control de version, turnos obligatorios, historial y borradores privados persistentes | Aceptacion por campo, autoguardado y auditoria inalterable |
+| Negociacion | Condiciones, clausulas propias, contraofertas, turnos, historial, borradores privados y aceptacion por campo persistente | Aceptacion de clausulas individuales, autoguardado y auditoria inalterable |
 | Recap | Doble confirmacion de la misma version, firmante de la sesion y conservacion tras reinicio | Identidad verificada, firma contractual de produccion, comision y auditoria inalterable |
 | Roles | Permisos de cargador, armador y administrador aplicados en API e interfaz | Administracion completa de usuarios, empresas y membresias |
 | Persistencia | SQLite local con transacciones y recuperacion ante fallo de escritura | Modelo relacional normalizado, migraciones, varias instancias y copias automaticas |
@@ -42,7 +42,15 @@ La version es global a la operacion: otra respuesta puede hacer que un formulari
 
 Seleccionar una oferta firm deja el primer turno al armador elegido. Cada contraoferta aceptada alterna el turno; solo el cargador propietario o el armador seleccionado pueden enviar cuando les corresponde. El administrador consulta sin negociar por las partes. El servidor comprueba permisos, version y turno; el turno se vuelve a comprobar bajo el bloqueo de escritura. En espera, la pantalla muestra los datos en lectura y permite refrescar. La confirmacion del Recap no exige tener el turno: cada parte puede aceptar la version vigente.
 
-Cada nueva contraoferta guarda numero, autor de la sesion, parte, fecha UTC y una copia de todas las condiciones y clausulas anteriores/enviadas. El historial desplegable muestra los valores y resalta las condiciones modificadas. Se conserva en SQLite y se revierte junto con la operacion si falla la escritura. No se reconstruyen acciones demo antiguas ni revisiones previas de propuestas iniciales; tampoco hay todavia aceptacion por campo. Es un registro local, no una auditoria a prueba de manipulaciones. Anadir el historial no invalida confirmaciones existentes.
+Cada nueva contraoferta guarda numero, autor de la sesion, parte, fecha UTC y una copia de todas las condiciones y clausulas anteriores/enviadas. El historial desplegable muestra los valores y resalta las condiciones modificadas. Se conserva en SQLite y se revierte junto con la operacion si falla la escritura. No se reconstruyen acciones demo antiguas ni revisiones previas de propuestas iniciales. Es un registro local, no una auditoria a prueba de manipulaciones. Anadir el historial no invalida confirmaciones existentes.
+
+## Aceptacion de condiciones por campo
+
+Cada lado puede aceptar o retirar su propia marca en los 19 campos del formulario durante Negociacion, sin depender del turno de contraoferta. El servidor asigna parte, autor y fecha UTC, comprueba empresa/contraparte y version y persiste la marca. El administrador consulta, pero no acepta por las partes. Una repeticion identica no duplica la marca ni cambia su autor/fecha original.
+
+Las marcas corresponden a las condiciones ya enviadas. La interfaz bloquea aceptar mientras haya cambios del formulario pendientes; no se aceptan borradores. La cantidad incluye su unidad; el flete incluye moneda/unidad y la demora su unidad, que se muestran junto al valor. Una contraoferta invalida las marcas de ambos lados solo en campos modificados; conserva las demas. Diferencias de escala decimal, como 100 y 100.00, no cuentan como cambio de valor.
+
+Es una ayuda de negociacion, no una firma ni un requisito obligatorio para cerrar: aceptar o retirar marcas no confirma ni retira el Recap, no cambia turno, contador, version contractual o borradores. El cierre sigue exigiendo la doble confirmacion del Recap. No hay aceptacion de clausulas individuales, bloqueo de edicion de campos aceptados ni historial independiente de cada aceptacion/retirada. El mecanismo se inspira en las capturas aportadas; su comportamiento exacto en el original no se ha contrastado en una nueva sesion.
 
 ## Borradores privados de negociacion
 
@@ -72,4 +80,4 @@ El entorno original no respondio al intento de revision del 16/10/2026. Las zona
 
 ## Siguientes incrementos
 
-Completar aceptacion por campo, administracion/perfiles y clausulas reutilizables; despues comunicaciones/documentos y operativa del embarque. La identidad de produccion, el modelo de datos definitivo y la comprobacion visual siguen siendo tareas transversales. El orden puede ajustarse segun dependencias y referencias disponibles.
+Completar administracion/perfiles y clausulas reutilizables; despues comunicaciones/documentos y operativa del embarque. La identidad de produccion, el modelo de datos definitivo y la comprobacion visual siguen siendo tareas transversales. El orden puede ajustarse segun dependencias y referencias disponibles.

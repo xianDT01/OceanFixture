@@ -102,6 +102,8 @@ La negociacion carga los datos de cada oferta desde la API y envia condiciones y
 
 Los turnos son obligatorios: tras seleccionar la oferta comienza el armador y cada contraoferta cambia el turno. Los permisos de la API dejan la pantalla en lectura al otro participante y al administrador. Cada envio guarda historial con autor de la sesion, fecha UTC y condiciones/clausulas antes y despues; se consulta desplegando `COUNTER OFFER HISTORY`. No se inventa historial para acciones anteriores a esta funcion. El historial se conserva en SQLite, pero no es una auditoria inalterable. Confirmar la version vigente del Recap sigue permitido a cada parte independientemente del turno.
 
+Cada lado puede aceptar o retirar su marca en los 19 campos enviados, con autor/fecha del servidor y control de version. La interfaz no permite aceptar cambios aun sin enviar. Una contraoferta conserva las marcas de campos iguales y elimina las de campos modificados, incluyendo moneda/unidades asociadas a importes/cantidad. Aceptar no cambia turno ni firma el Recap; retirar una marca tampoco retira una confirmacion del Recap. Es una ayuda de negociacion, no una firma ni una condicion obligatoria de cierre. Las marcas se conservan en SQLite. Aceptacion de clausulas individuales y auditoria de todas las retiradas siguen pendientes.
+
 `SAVE DRAFT` guarda un borrador privado por usuario y operacion, incluidas cantidades/importes aun incompletos y las clausulas propias. No envia nada ni cambia turno, version contractual o confirmaciones. Al volver se ofrece restaurarlo explicitamente; restaurar reemplaza los campos editados de la pantalla. No se puede restaurar un borrador basado en una version antigua. Se puede eliminar sin tocar el formulario; enviar correctamente la contraoferta elimina el borrador del remitente en la misma transaccion. Los borradores se conservan en SQLite, no en el navegador, y no se exponen al otro participante ni al administrador. No hay autoguardado ni fusion entre versiones: en dos pestanas del mismo usuario prevalece el ultimo guardado correcto del borrador.
 
 - `GET /v1/api/offers/dashboard`
@@ -113,6 +115,7 @@ Los turnos son obligatorios: tras seleccionar la oferta comienza el armador y ca
 - `POST /v1/api/offers/{id}/firm-offer/{shipownerId}` (requiere `{ "versionHash": "version recibida en recapVersion" }`)
 - `POST /v1/api/offers/{id}/counter` (endpoint antiguo: HTTP 410; usar negociacion con version)
 - `POST /v1/api/offers/{id}/negotiation/counter` (condiciones, clausulas y version)
+- `PUT /v1/api/offers/{id}/negotiation/fields/{field}/acceptance` (`versionHash`, `accepted`): marca de la parte identificada por sesion; admite solo los 19 campos de negociacion
 - `GET`, `PUT`, `DELETE /v1/api/offers/{id}/negotiation/draft` (borrador propio; PUT recibe `baseVersion`, `values` como cadenas y `ownClauses`; autor y parte proceden de la sesion)
 - `POST /v1/api/offers/{id}/recap/confirm`
 - `GET /v1/api/companies`

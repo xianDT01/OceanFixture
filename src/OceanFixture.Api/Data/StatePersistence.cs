@@ -33,7 +33,7 @@ internal static class StateCodec
                 || !Enum.IsDefined(offer.Stage) || offer.Terms is null || offer.Bids is null
                 || offer.InvitedShipownerIds is null || offer.ChartererClauses is null
                 || offer.ShipownerClauses is null || offer.Confirmations is null || offer.NegotiationHistory is null
-                || offer.NegotiationDrafts is null)
+                || offer.NegotiationDrafts is null || offer.FieldAcceptances is null)
             || state.Offers.Select(offer => offer.Id).Distinct().Count() != state.Offers.Count
             || state.Offers.Select(offer => offer.Reference).Distinct().Count() != state.Offers.Count)
             throw new InvalidDataException("Stored application state contains invalid or duplicate entities. Existing data was not replaced.");

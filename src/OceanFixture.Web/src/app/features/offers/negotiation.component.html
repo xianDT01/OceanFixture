@@ -14,16 +14,28 @@
       </p>
     }
     @if (current.stage === 'Negotiation' && !current.permissions?.canSendCounter) {
-      <p class="turn-notice" role="status">Read-only. Current turn: {{ turn }}. <button (click)="reload()" [disabled]="saving || loading">REFRESH</button></p>
+      <p class="turn-notice" role="status">Conditions are read-only. Current turn: {{ turn }}. Each party may still accept sent conditions. <button (click)="reload()" [disabled]="saving || loading">REFRESH</button></p>
     }
     <div class="negotiation-layout">
       <div>
         <div class="reference-strip"><span>NR.</span><b>REFERENCE</b><strong>{{ current.reference }}</strong></div>
         <div class="negotiation-form">
           @for (row of rows; track row.label; let index = $index) {
-            <div class="neg-row"><b>{{ index + 1 }}</b><label [for]="row.key">{{ row.label }}</label><div class="original-value">{{ row.original }}</div>@if (row.multiline) { <textarea [id]="row.key" [(ngModel)]="row.value" [disabled]="!canSend"></textarea> } @else { <input [id]="row.key" [(ngModel)]="row.value" [disabled]="!canSend" /> }</div>
+            <div class="neg-row"><b>{{ index + 1 }}</b><label [for]="row.key">{{ row.label }}</label><div class="original-value">{{ row.original }} {{ fieldUnit(row.key) }}</div>@if (row.multiline) { <textarea [id]="row.key" [(ngModel)]="row.value" [disabled]="!canSend"></textarea> } @else { <input [id]="row.key" [(ngModel)]="row.value" [disabled]="!canSend" /> }
+              <div class="field-acceptances">
+                @for (party of parties; track party) {
+                  @if (acceptance(row.key, party); as accepted) {
+                    <span class="accepted" [title]="accepted.acceptedBy + ' · ' + (accepted.acceptedAt | date:'dd/MM/yyyy HH:mm':'UTC') + ' UTC'">{{ party }} &#10003;</span>
+                  } @else { <span>{{ party }} pending</span> }
+                }
+                @if (ownParty; as party) { <button [disabled]="!canAcceptFields" (click)="toggleAcceptance(row.key)"
+                  [attr.aria-pressed]="!!acceptance(row.key, party)" [attr.aria-label]="(acceptance(row.key, party) ? 'Withdraw acceptance of ' : 'Accept ') + row.label"
+                  title="Applies only to sent conditions; send or discard form edits first">{{ acceptance(row.key, party) ? 'UNDO' : 'ACCEPT' }}</button> }
+              </div>
+            </div>
           }
         </div>
+        <p>Field acceptance records agreement on sent conditions only. It does not sign or withdraw the final Recap. Send or discard edited conditions before accepting.</p>
       </div>
       <aside class="clause-editor">
         <h3>CHARTERER'S CLAUSES <span>{{ chartererClauses.length }}</span></h3>

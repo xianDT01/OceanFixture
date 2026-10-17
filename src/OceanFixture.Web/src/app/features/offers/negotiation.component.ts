@@ -28,6 +28,12 @@ export class NegotiationComponent {
   rows: NegotiationRow[] = [];
   chartererClauses: string[] = [];
   shipownerClauses: string[] = [];
+  readonly parties: ('Charterer' | 'Shipowner')[] = ['Charterer', 'Shipowner'];
+  fieldUnit(field: keyof VoyageTerms): string {
+    const terms = this.offer?.terms;
+    return field === 'quantity' ? terms?.quantityUnit ?? '' : field === 'freight'
+      ? [terms?.freightCurrency, terms?.freightUnit].filter(Boolean).join(' / ') : field === 'demurrage' ? terms?.demurrageUnit ?? '' : '';
+  }
   get counter(): number { return this.offer?.counter ?? 0; }
   get turn(): string { return this.offer?.negotiationTurn ?? ''; }
   get history(): NegotiationEntry[] { return [...(this.offer?.negotiationHistory ?? [])].reverse(); }
@@ -43,6 +49,27 @@ export class NegotiationComponent {
       || JSON.stringify(this.shipownerClauses) !== JSON.stringify(this.offer.shipownerClauses ?? []));
   }
   get canSend(): boolean { return !!this.offer?.recapVersion && this.offer.stage === 'Negotiation' && !this.saving && !this.loading && !!this.offer.permissions?.canSendCounter; }
+  get ownParty(): 'Charterer' | 'Shipowner' | undefined {
+    return this.offer?.permissions?.canConfirmAsCharterer ? 'Charterer'
+      : this.offer?.permissions?.canConfirmAsShipowner ? 'Shipowner' : undefined;
+  }
+  get canAcceptFields(): boolean { return !!this.ownParty && !!this.offer?.recapVersion && this.offer.stage === 'Negotiation'
+    && !this.loading && !this.saving && !this.hasChanges; }
+  acceptance(field: keyof VoyageTerms, party: 'Charterer' | 'Shipowner') {
+    return this.offer?.fieldAcceptances?.find(item => item.field === field && item.party === party);
+  }
+  toggleAcceptance(field: keyof VoyageTerms): void {
+    if (!this.canAcceptFields || !this.offer?.recapVersion || !this.ownParty) return;
+    const accepted = !this.acceptance(field, this.ownParty);
+    this.saving = true; this.error = ''; this.message = '';
+    this.api.setFieldAcceptance(this.offer.id, field, this.offer.recapVersion, accepted)
+      .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
+        next: offer => { this.loadOffer(offer); this.saving = false; this.message = accepted
+          ? 'Condition accepted. Final Recap confirmation is still separate.' : 'Condition acceptance withdrawn. This does not withdraw a Recap confirmation.'; },
+        error: response => { this.saving = false; this.error = response.status === 409
+          ? 'Conditions have changed. Reload before accepting.' : 'Condition acceptance was not saved. Please try again.'; }
+      });
+  }
   canEditClauses(side: 'charterer' | 'shipowner'): boolean { return this.canSend && !!(side === 'charterer'
     ? this.offer?.permissions?.canEditChartererClauses : this.offer?.permissions?.canEditShipownerClauses); }
 

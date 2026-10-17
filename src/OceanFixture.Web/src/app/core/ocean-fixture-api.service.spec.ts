@@ -85,4 +85,12 @@ describe('OceanFixtureApiService negotiation', () => {
     expect(remove.request.method).toBe('DELETE');
     remove.flush(null);
   });
+
+  it('sets field acceptance without allowing a client-controlled party or author', () => {
+    api.setFieldAcceptance('offer-id', 'laycan', 'v1', true).subscribe();
+    const request = http.expectOne('http://localhost:5100/v1/api/offers/offer-id/negotiation/fields/laycan/acceptance');
+    expect(request.request.method).toBe('PUT');
+    expect(request.request.body).toEqual({ versionHash: 'v1', accepted: true });
+    request.flush({});
+  });
 });

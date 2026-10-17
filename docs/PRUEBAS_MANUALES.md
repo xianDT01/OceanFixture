@@ -35,7 +35,16 @@ Arrancar API en Development y Angular segun el [README](../README.md). Abrir `ht
 3. Como cargador, debe aparecer solo su boton de confirmacion. Confirmarlo no cierra todavia la operacion.
 4. Cambiar al armador seleccionado y confirmar su parte. La operacion debe pasar a Operative.
 5. Cambiar al administrador: puede consultar, pero no firmar por una u otra parte.
-6. La aceptacion individual por campo todavia no esta implementada. El historial de operaciones antiguas puede estar vacio; no se reconstruye actividad anterior.
+6. El historial de operaciones antiguas puede estar vacio; no se reconstruye actividad anterior.
+
+### Aceptacion por campo
+
+1. En una negociacion abierta y sin editar el formulario, pulsar `ACCEPT` en laycan y flete como cargador. Debe mostrar `Charterer` con marca y autor/fecha UTC al pasar el puntero. No debe cambiar turno ni contador ni confirmar el Recap.
+2. Cambiar al armador elegido y aceptar esos campos, incluso si no es su turno de contraoferta. Deben verse las dos marcas por campo.
+3. Pulsar `UNDO` en un campo: solo desaparece la marca propia, no la de la contraparte. Esto no retira una confirmacion del Recap.
+4. En el turno correspondiente, modificar el flete y enviar una contraoferta. Deben desaparecer las marcas del flete, pero conservarse las de laycan sin cambios. Comprobar moneda/unidades mostradas.
+5. Escribir cambios sin enviarlos: los botones de aceptacion deben quedar deshabilitados hasta enviar o descartar explicitamente las ediciones. El administrador ve las marcas, sin botones para aceptar.
+6. Abrir una version antigua en otra pestana y cambiar condiciones desde la primera: intentar aceptar la antigua debe devolver conflicto, sin mostrar exito. Recargar descarta el formulario local y obtiene la version actual.
 
 ### Borrador privado
 
@@ -48,7 +57,7 @@ Arrancar API en Development y Angular segun el [README](../README.md). Abrir `ht
 ## 5. Persistencia y sesiones
 
 1. Apagar y reiniciar la API con la misma ruta de base de datos.
-2. Volver a elegir perfil: las sesiones anteriores deben caducar, pero la carga, propuestas, condiciones, turnos, historial, borradores privados y confirmaciones deben conservarse.
+2. Volver a elegir perfil: las sesiones anteriores deben caducar, pero la carga, propuestas, condiciones, turnos, historial, borradores privados, marcas por campo y confirmaciones deben conservarse.
 3. Crear otra carga: la nueva referencia no debe colisionar con las existentes ni duplicarse la semilla demo.
 
 ## 6. Casos negativos

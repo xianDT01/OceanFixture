@@ -14,7 +14,10 @@ export interface CargoOffer {
   terms: VoyageTerms; bids: ShipownerBid[]; selectedShipownerId?: number; counter: number; confirmations: RecapConfirmation[];
   recapVersion?: string; chartererClauses?: string[]; shipownerClauses?: string[]; negotiationTurn?: 'Charterer' | 'Shipowner';
   negotiationHistory?: NegotiationEntry[];
+  fieldAcceptances?: FieldAcceptance[];
 }
+
+export interface FieldAcceptance { field: string; party: 'Charterer' | 'Shipowner'; acceptedBy: string; acceptedAt: string; valueHash: string; }
 
 export interface NegotiationSnapshot { terms: VoyageTerms; chartererClauses: string[]; shipownerClauses: string[]; }
 export interface NegotiationDraft { userId: string; party: string; baseVersion: string; savedAt: string;

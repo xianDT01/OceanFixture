@@ -25,6 +25,10 @@ export class OceanFixtureApiService {
   negotiationDraft(id: string): Observable<NegotiationDraft | null> {
     return this.http.get<NegotiationDraft | null>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/negotiation/draft`);
   }
+  setFieldAcceptance(id: string, field: keyof VoyageTerms, versionHash: string, accepted: boolean): Observable<CargoOffer> {
+    return this.http.put<CargoOffer>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/negotiation/fields/${encodeURIComponent(field)}/acceptance`,
+      { versionHash, accepted });
+  }
   saveNegotiationDraft(id: string, baseVersion: string, values: Record<string, string>, ownClauses: string[]): Observable<NegotiationDraft> {
     return this.http.put<NegotiationDraft>(`${this.baseUrl}/offers/${encodeURIComponent(id)}/negotiation/draft`, { baseVersion, values, ownClauses });
   }
