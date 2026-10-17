@@ -31,7 +31,9 @@ export class NegotiationComponent {
       || JSON.stringify(this.chartererClauses) !== JSON.stringify(this.offer.chartererClauses ?? [])
       || JSON.stringify(this.shipownerClauses) !== JSON.stringify(this.offer.shipownerClauses ?? []));
   }
-  get canSend(): boolean { return !!this.offer?.recapVersion && this.offer.stage === 'Negotiation' && !this.saving && !this.loading; }
+  get canSend(): boolean { return !!this.offer?.recapVersion && this.offer.stage === 'Negotiation' && !this.saving && !this.loading && !!this.offer.permissions?.canSendCounter; }
+  canEditClauses(side: 'charterer' | 'shipowner'): boolean { return this.canSend && !!(side === 'charterer'
+    ? this.offer?.permissions?.canEditChartererClauses : this.offer?.permissions?.canEditShipownerClauses); }
 
   constructor() { this.reload(); }
 
@@ -87,7 +89,7 @@ export class NegotiationComponent {
   }
 
   addClause(side: 'charterer' | 'shipowner'): void {
-    if (!this.canSend) return;
+    if (!this.canEditClauses(side)) return;
     (side === 'charterer' ? this.chartererClauses : this.shipownerClauses).push('New clause');
   }
 }

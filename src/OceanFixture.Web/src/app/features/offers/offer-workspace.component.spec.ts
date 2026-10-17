@@ -4,6 +4,7 @@ import { of, Subject, throwError } from 'rxjs';
 import { CargoOffer, Company } from '../../core/models';
 import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
 import { OfferWorkspaceComponent } from './offer-workspace.component';
+import { SessionService } from '../../core/session.service';
 
 describe('Cargo order creation workflow', () => {
   let api: jasmine.SpyObj<OceanFixtureApiService>;
@@ -15,7 +16,7 @@ describe('Cargo order creation workflow', () => {
     const params = convertToParamMap({});
     await TestBed.configureTestingModule({ imports: [OfferWorkspaceComponent], providers: [provideRouter([]),
       { provide: ActivatedRoute, useValue: { snapshot: { paramMap: params }, paramMap: of(params) } },
-      { provide: OceanFixtureApiService, useValue: api }] }).compileComponents();
+      { provide: OceanFixtureApiService, useValue: api }, { provide: SessionService, useValue: { user: () => ({ role: 'Charterer', companyName: 'Charterer One' }) } }] }).compileComponents();
     navigate = spyOn(TestBed.inject(Router), 'navigate').and.resolveTo(true);
   });
 

@@ -9,6 +9,7 @@ export interface VoyageTerms {
 }
 
 export interface CargoOffer {
+  chartererCompanyId?: number; permissions?: OfferPermissions;
   id: string; reference: number; customerReference: string; createdOn: string; stage: OfferStage;
   terms: VoyageTerms; bids: ShipownerBid[]; selectedShipownerId?: number; counter: number; confirmations: RecapConfirmation[];
   recapVersion?: string; chartererClauses?: string[]; shipownerClauses?: string[]; negotiationTurn?: 'Charterer' | 'Shipowner';
@@ -20,3 +21,5 @@ export interface ShipownerBid { id: string; shipownerId: number; shipownerName: 
 export interface DashboardLane { key: OfferStage; label: string; offers: CargoOffer[]; }
 export interface Company { id: number; name: string; type: string; country: string; vat: string; approved: boolean; }
 export interface CreateCargoOfferRequest { customerReference: string; terms: VoyageTerms; invitedShipownerIds: number[]; }
+export interface OfferPermissions { canSelectFirmOffer: boolean; canSendCounter: boolean; canConfirmAsCharterer: boolean;
+  canConfirmAsShipowner: boolean; canEditChartererClauses: boolean; canEditShipownerClauses: boolean; }

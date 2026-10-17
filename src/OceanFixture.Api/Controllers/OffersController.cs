@@ -1,10 +1,14 @@
 using Microsoft.AspNetCore.Mvc;
 using OceanFixture.Api.Data;
 using OceanFixture.Domain;
+using Microsoft.AspNetCore.Authorization;
+using OceanFixture.Api.Security;
 
 namespace OceanFixture.Api.Controllers;
 
 [ApiController]
+[Authorize(Roles = "Charterer,Shipowner,Admin")]
+[ServiceFilter(typeof(OfferAccessFilter))]
 [Route("v1/api/offers")]
 public sealed class OffersController(DemoStore store) : ControllerBase
 {
@@ -56,6 +60,7 @@ public sealed class OffersController(DemoStore store) : ControllerBase
             {
                 Reference = store.Offers.Select(item => item.Reference).DefaultIfEmpty(0).Max() + 1,
                 CustomerReference = request.CustomerReference.Trim(),
+                ChartererCompanyId = request.ChartererCompanyId ?? 39,
                 Terms = terms,
                 InvitedShipownerIds = request.InvitedShipownerIds.Distinct().ToList()
             };
@@ -161,7 +166,7 @@ public sealed class OffersController(DemoStore store) : ControllerBase
     }
 }
 
-public sealed record ConfirmRecapRequest(string Party, string ConfirmedBy, string VersionHash);
-public sealed record CreateCargoOfferRequest(string CustomerReference, VoyageTerms Terms, int[] InvitedShipownerIds);
+public sealed record ConfirmRecapRequest(string Party, string? ConfirmedBy, string VersionHash);
+public sealed record CreateCargoOfferRequest(string CustomerReference, VoyageTerms Terms, int[] InvitedShipownerIds, int? ChartererCompanyId = null);
 public sealed record SelectFirmOfferRequest(string VersionHash);
 public sealed record NegotiatedCounterRequest(VoyageTerms Terms, string[] ChartererClauses, string[] ShipownerClauses, string VersionHash);

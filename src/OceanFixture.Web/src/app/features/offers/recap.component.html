@@ -8,8 +8,8 @@
       <div class="recap-grid">
         <section><table class="detail-table"><tbody>@for (row of rows; track row.label; let index = $index) { <tr><th>{{ index }}</th><td>{{ row.label }}</td><td>{{ row.value }}</td></tr> }</tbody></table></section>
         <aside>
-          <div class="confirmation-card" [class.done]="confirmed('charterer')"><h3>Charterer confirmation</h3><b>{{ current.terms.charterer }}</b><p>{{ confirmed('charterer') ? 'Confirmed in OceanFixture' : 'Pending' }}</p>@if (!confirmed('charterer')) { <button class="primary wide" [disabled]="saving || !canConfirm" (click)="confirm('charterer')">CONFIRM AS CHARTERER</button> }</div>
-          <div class="confirmation-card" [class.done]="confirmed('shipowner')"><h3>Shipowner confirmation</h3><p>{{ confirmed('shipowner') ? 'Confirmed in OceanFixture' : 'Pending' }}</p>@if (!confirmed('shipowner')) { <button class="primary wide" [disabled]="saving || !canConfirm" (click)="confirm('shipowner')">CONFIRM AS SHIPOWNER</button> }</div>
+          <div class="confirmation-card" [class.done]="confirmed('charterer')"><h3>Charterer confirmation</h3><b>{{ current.terms.charterer }}</b><p>{{ confirmed('charterer') ? 'Confirmed in OceanFixture' : 'Pending' }}</p>@if (!confirmed('charterer') && canConfirmAs('charterer')) { <button class="primary wide" [disabled]="saving" (click)="confirm('charterer')">CONFIRM AS CHARTERER</button> }</div>
+          <div class="confirmation-card" [class.done]="confirmed('shipowner')"><h3>Shipowner confirmation</h3><p>{{ confirmed('shipowner') ? 'Confirmed in OceanFixture' : 'Pending' }}</p>@if (!confirmed('shipowner') && canConfirmAs('shipowner')) { <button class="primary wide" [disabled]="saving" (click)="confirm('shipowner')">CONFIRM AS SHIPOWNER</button> }</div>
           <div class="legal-note">The fixture becomes binding only after both parties confirm this exact recap in the platform.</div>
         </aside>
       </div>

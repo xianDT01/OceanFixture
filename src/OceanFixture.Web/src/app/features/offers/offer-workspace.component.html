@@ -12,7 +12,7 @@
       @if (step === 1) {
         <div class="reference-strip"><span>NR.</span><b>REFERENCE</b><strong>Assigned on save</strong></div>
         <form class="form-grid" (ngSubmit)="setStep(2)">
-          <label class="form-field"><span>CHARTERER*</span><input name="charterer" [(ngModel)]="draft.terms.charterer" required /></label>
+          <label class="form-field"><span>CHARTERER*</span><input name="charterer" [(ngModel)]="draft.terms.charterer" readonly required /></label>
           <label class="form-field"><span>MY REFERENCE*</span><input name="reference" [(ngModel)]="draft.customerReference" required /></label>
           <label class="form-field"><span>CARGO QUANTITY (MT)*</span><input name="quantity" type="number" min="0.01" step="any" [(ngModel)]="draft.terms.quantity" required /></label>
           <label class="form-field"><span>STOWAGE FACTOR</span><input name="stowageFactor" [(ngModel)]="draft.terms.stowageFactor" /></label>

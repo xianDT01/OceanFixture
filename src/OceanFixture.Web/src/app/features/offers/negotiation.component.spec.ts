@@ -11,6 +11,8 @@ describe('Negotiation API workflow', () => {
   beforeEach(async () => {
     offer = { id: 'offer-id', reference: 2942, customerReference: 'API reference', createdOn: '', stage: 'Negotiation',
       recapVersion: 'v1', bids: [], counter: 2, confirmations: [], negotiationTurn: 'Charterer',
+      permissions: { canSelectFirmOffer: false, canSendCounter: true, canConfirmAsCharterer: true,
+        canConfirmAsShipowner: true, canEditChartererClauses: true, canEditShipownerClauses: true },
       chartererClauses: ['Existing clause'], shipownerClauses: [],
       terms: { quantity: 4000, quantityUnit: 'MT', freightCurrency: 'EUR', charterer: 'Customer', commodity: 'Steel' } as VoyageTerms };
     api = jasmine.createSpyObj('api', ['recap', 'sendCounter']);
@@ -68,6 +70,14 @@ describe('Negotiation API workflow', () => {
     expect(component.rows[0].value).toBe('Edited customer');
     expect(component.counter).toBe(2);
     expect(component.saving).toBeFalse();
+  });
+
+  it('does not allow adding clauses for the counterparty', () => {
+    offer.permissions!.canEditShipownerClauses = false;
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.addClause('shipowner');
+    expect(component.shipownerClauses).toEqual([]);
+    expect(component.canEditClauses('shipowner')).toBeFalse();
   });
 
   it('does not allow sending when loading fails', () => {

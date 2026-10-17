@@ -6,13 +6,13 @@
     <button class="language" type="button" (click)="menuOpen = !menuOpen"><span>En</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6" /></svg></button>
     <button type="button" aria-label="Profile" (click)="menuOpen = !menuOpen"><svg viewBox="0 0 24 24"><circle cx="12" cy="7" r="4"/><path d="M4 21c.7-5 3.3-7 8-7s7.3 2 8 7"/></svg></button>
     <button type="button" aria-label="Notifications"><svg viewBox="0 0 24 24"><path d="M5 17h14l-2-3v-4a5 5 0 0 0-10 0v4l-2 3Z"/><path d="M10 20h4"/></svg></button>
-    @if (menuOpen) { <nav class="account-menu"><button>MY PROFILE</button><button>SWITCH ROLE</button><button>SIGN OUT</button></nav> }
+    @if (menuOpen) { <nav class="account-menu"><button disabled>{{ session.user()?.role }} · {{ session.user()?.companyName }}</button><button routerLink="/login">SWITCH DEMO PROFILE</button><button (click)="session.signOut()">SIGN OUT</button></nav> }
   </div>
 </header>
 
 <aside class="sidebar" aria-label="Main navigation">
   <a routerLink="/home" routerLinkActive="active" class="side-link" data-title="Home"><svg viewBox="0 0 64 64"><path d="M9 32h46l-7 17H18L9 32Z"/><path d="M17 32V17h30v15M23 17V10h18v7M13 50c6 5 12-5 19 0 7 5 13-5 20 0M18 26h28M32 10v22"/></svg></a>
-  <a routerLink="/offers/new" routerLinkActive="active" class="side-link" data-title="New cargo order"><svg viewBox="0 0 64 64"><path d="M8 52h43M21 52V16M38 52V16M12 16h43M15 16l18-8 22 8M50 16v23M46 39h8M27 52l9-36M35 52l-9-36"/></svg></a>
+  @if (session.canCreate) { <a routerLink="/offers/new" routerLinkActive="active" class="side-link" data-title="New cargo order"><svg viewBox="0 0 64 64"><path d="M8 52h43M21 52V16M38 52V16M12 16h43M15 16l18-8 22 8M50 16v23M46 39h8M27 52l9-36M35 52l-9-36"/></svg></a> }
   <a routerLink="/home" class="side-link" data-title="Companies"><svg viewBox="0 0 64 64"><path d="M25 55h16L38 26H28l-3 29ZM28 26h10l-2-8h-6l-2 8ZM32 18V8M23 17 13 11M41 17l10-6M22 24H10M42 24h12M27 38h12M26 46h14"/></svg></a>
   <a routerLink="/home" class="side-link" data-title="Contacts"><svg viewBox="0 0 64 64"><rect x="7" y="15" width="50" height="34"/><path d="m8 17 24 20 24-20"/></svg></a>
   <a routerLink="/home" class="side-link" data-title="Clauses"><svg viewBox="0 0 64 64"><rect x="14" y="12" width="34" height="45"/><path d="M24 12V7h14v5M21 28l5 5 10-11M21 42h20M21 49h14M45 37l10-10 4 4-10 10-7 2 3-6Z"/></svg></a>

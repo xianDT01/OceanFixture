@@ -5,6 +5,7 @@ import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
 import { DashboardComponent } from './dashboard.component';
 import { GeographicMapComponent } from './geographic-map.component';
 import { By } from '@angular/platform-browser';
+import { SessionService } from '../../core/session.service';
 
 describe('DashboardComponent', () => {
   const lanes = [
@@ -15,7 +16,7 @@ describe('DashboardComponent', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [DashboardComponent],
-      providers: [provideRouter([]), { provide: OceanFixtureApiService, useValue: { dashboard: () => of(lanes) } }]
+      providers: [provideRouter([]), { provide: SessionService, useValue: { canCreate: true } }, { provide: OceanFixtureApiService, useValue: { dashboard: () => of(lanes) } }]
     }).compileComponents();
   });
 

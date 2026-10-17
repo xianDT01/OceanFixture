@@ -13,7 +13,8 @@ describe('Comparative API workflow', () => {
     const terms = { charterer: 'Customer', quantity: 9000, quantityUnit: 'MT', commodity: 'Steel',
       freightCurrency: 'EUR', freightUnit: 'LPSM', demurrageUnit: 'PDPR' } as VoyageTerms;
     offer = { id: 'offer-id', reference: 2941, customerReference: 'Comparison', createdOn: '2025-02-03', stage: 'CargoOrder',
-      recapVersion: 'v1', terms, counter: 0, confirmations: [], bids: [
+      recapVersion: 'v1', terms, counter: 0, confirmations: [], permissions: { canSelectFirmOffer: true, canSendCounter: false,
+        canConfirmAsCharterer: false, canConfirmAsShipowner: false, canEditChartererClauses: false, canEditShipownerClauses: false }, bids: [
         { id: 'bid-1', shipownerId: 120, shipownerName: 'Owner One', receivedAt: '2025-02-03T13:20:00Z', terms: { ...terms, freight: 195000 } },
         { id: 'bid-2', shipownerId: 121, shipownerName: 'Owner Two', receivedAt: '2025-02-03T13:24:00Z', terms: { ...terms, freight: 265000, freightCurrency: 'USD' } }
       ] };
@@ -65,6 +66,13 @@ describe('Comparative API workflow', () => {
     component.selectFirmOffer(offer.bids[0]);
     expect(api.selectFirmOffer).not.toHaveBeenCalled();
     expect(component.canSelect).toBeFalse();
+  });
+
+  it('does not let a shipowner select a firm offer when permission is absent', () => {
+    offer.permissions!.canSelectFirmOffer = false;
+    const component = TestBed.createComponent(ComparativeComponent).componentInstance;
+    component.selectFirmOffer(offer.bids[0]);
+    expect(api.selectFirmOffer).not.toHaveBeenCalled();
   });
 
   it('shows empty bids without invented carriers', () => {

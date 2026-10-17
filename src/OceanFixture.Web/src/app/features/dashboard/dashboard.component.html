@@ -5,10 +5,11 @@
       <label class="search">&#9906; <input [(ngModel)]="search" placeholder="Search by keywords" /><button type="button" (click)="search = ''">&times;</button></label>
       <label class="date"><input placeholder="Search by dates" /></label>
       <button class="filters">FILTERS <span>&#8964;</span></button>
-      <a routerLink="/offers/new">+ NEW</a>
+      @if (session.canCreate) { <a routerLink="/offers/new">+ NEW</a> }
     </div>
   </header>
 
+  @if (error) { <p role="alert">{{ error }}</p> }
   <section class="map-frame">
     <section class="world" [class.collapsed]="mapCollapsed" (transitionend)="geographicMap.refreshLayout()">
       <of-geographic-map #geographicMap />

@@ -10,7 +10,8 @@ describe('Recap API workflow', () => {
   let offer: CargoOffer;
   beforeEach(async () => {
     offer = { id: 'offer-id', reference: 2942, customerReference: 'FROM API', createdOn: '2025-02-03', stage: 'Negotiation',
-      recapVersion: 'version-1', bids: [], counter: 2, confirmations: [], terms: { charterer: 'Customer', quantity: 4000,
+      recapVersion: 'version-1', bids: [], counter: 2, confirmations: [], permissions: { canSelectFirmOffer: false, canSendCounter: true,
+        canConfirmAsCharterer: true, canConfirmAsShipowner: true, canEditChartererClauses: true, canEditShipownerClauses: true }, terms: { charterer: 'Customer', quantity: 4000,
         quantityUnit: 'MT', stowageFactor: 'NA', commodity: 'Steel', portOfLoading: 'La Spezia', loadingConditions: '',
         portOfDischarge: 'Vigo', dischargeConditions: '', laycan: '', loadingDischargingTerms: '', laytimeTerms: '',
         charterPartyForm: '', restrictions: '', additionalRequirements: '', freightCurrency: 'EUR', freightUnit: '',
@@ -48,6 +49,16 @@ describe('Recap API workflow', () => {
     expect(component.error).toContain('Reload');
     expect(component.confirmed('shipowner')).toBeFalse();
     expect(component.saving).toBeFalse();
+  });
+
+  it('shows only the confirmation allowed by the server and blocks calling the other party', () => {
+    offer.permissions!.canConfirmAsShipowner = false;
+    const fixture = TestBed.createComponent(RecapComponent);
+    fixture.detectChanges();
+    expect(fixture.nativeElement.textContent).toContain('CONFIRM AS CHARTERER');
+    expect(fixture.nativeElement.textContent).not.toContain('CONFIRM AS SHIPOWNER');
+    fixture.componentInstance.confirm('shipowner');
+    expect(api.confirmRecap).not.toHaveBeenCalled();
   });
 
   it('restores both confirmations when reloading from the server', () => {

@@ -31,9 +31,11 @@ export class RecapComponent {
   }
   get fullyConfirmed(): boolean { return this.confirmed('charterer') && this.confirmed('shipowner'); }
   get canConfirm(): boolean { return !!this.offer?.recapVersion && ['Negotiation', 'Operative'].includes(this.offer.stage); }
+  canConfirmAs(party: 'charterer' | 'shipowner'): boolean { return this.canConfirm && !!(party === 'charterer'
+    ? this.offer?.permissions?.canConfirmAsCharterer : this.offer?.permissions?.canConfirmAsShipowner); }
 
   confirm(party: 'charterer' | 'shipowner'): void {
-    if (!this.offer?.recapVersion || !this.canConfirm || this.saving || this.confirmed(party)) return;
+    if (!this.offer?.recapVersion || !this.canConfirmAs(party) || this.saving || this.confirmed(party)) return;
     this.saving = true;
     this.error = '';
     this.api.confirmRecap(this.offer.id, party, this.offer.recapVersion).pipe(takeUntilDestroyed(this.destroyRef)).subscribe({

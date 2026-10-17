@@ -1,4 +1,5 @@
-import { Component } from '@angular/core';
+import { Component, inject } from '@angular/core';
+import { SessionService } from '../core/session.service';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
 @Component({
@@ -6,4 +7,4 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   templateUrl: './shell.component.html', styleUrl: './shell.component.scss'
 })
-export class ShellComponent { menuOpen = false; }
+export class ShellComponent { readonly session = inject(SessionService); menuOpen = false; }

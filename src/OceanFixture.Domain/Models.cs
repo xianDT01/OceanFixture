@@ -58,10 +58,25 @@ public sealed record RecapConfirmation(
 
 public sealed class CargoOffer
 {
-    public string RecapVersion => Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
+    // Existing local demo snapshots belong to Charterer One (39).
+    public int ChartererCompanyId { get; init; } = 39;
+    [System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    public OfferPermissions? Permissions { get; set; }
+    private string? projectedRecapVersion;
+    // A read-only redacted response must retain the version of the full server state.
+    public void PreserveVersionForReadOnlyProjection() => projectedRecapVersion = RecapVersion;
+    public string RecapVersion => projectedRecapVersion ?? Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(
         System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(new
         {
-            Reference, CustomerReference, Terms, SelectedShipownerId, ChartererClauses, ShipownerClauses, Counter, NegotiationTurn, Bids
+            Reference,
+            CustomerReference,
+            Terms,
+            SelectedShipownerId,
+            ChartererClauses,
+            ShipownerClauses,
+            Counter,
+            NegotiationTurn,
+            Bids
         })));
     public Guid Id { get; init; } = Guid.NewGuid();
     public int Reference { get; init; }
@@ -80,6 +95,8 @@ public sealed class CargoOffer
 }
 
 public sealed record DashboardLane(string Key, string Label, IReadOnlyCollection<CargoOffer> Offers);
+public sealed record OfferPermissions(bool CanSelectFirmOffer, bool CanSendCounter, bool CanConfirmAsCharterer,
+    bool CanConfirmAsShipowner, bool CanEditChartererClauses, bool CanEditShipownerClauses);
 
 public sealed record MessageTemplate(string Key, string Description, string Subject);
 

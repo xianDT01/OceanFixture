@@ -17,11 +17,11 @@
       </div>
       <aside class="clause-editor">
         <h3>CHARTERER'S CLAUSES <span>{{ chartererClauses.length }}</span></h3>
-        <div class="clause-list">@for (clause of chartererClauses; track index; let index = $index) { <div><b>{{ index + 19 }}</b><textarea [(ngModel)]="chartererClauses[index]" [disabled]="!canSend" [attr.aria-label]="'Charterer clause ' + (index + 1)"></textarea></div> }</div>
-        <button class="secondary wide" [disabled]="!canSend" (click)="addClause('charterer')">+ ADD CLAUSE</button>
+        <div class="clause-list">@for (clause of chartererClauses; track index; let index = $index) { <div><b>{{ index + 19 }}</b><textarea [(ngModel)]="chartererClauses[index]" [disabled]="!canEditClauses('charterer')" [attr.aria-label]="'Charterer clause ' + (index + 1)"></textarea></div> }</div>
+        <button class="secondary wide" [disabled]="!canEditClauses('charterer')" (click)="addClause('charterer')">+ ADD CLAUSE</button>
         <h3>SHIPOWNER'S CLAUSES <span>{{ shipownerClauses.length }}</span></h3>
-        <div class="clause-list">@for (clause of shipownerClauses; track index; let index = $index) { <div><b>{{ index + 1 }}</b><textarea [(ngModel)]="shipownerClauses[index]" [disabled]="!canSend" [attr.aria-label]="'Shipowner clause ' + (index + 1)"></textarea></div> }</div>
-        <button class="secondary wide" [disabled]="!canSend" (click)="addClause('shipowner')">+ ADD CLAUSE</button>
+        <div class="clause-list">@for (clause of shipownerClauses; track index; let index = $index) { <div><b>{{ index + 1 }}</b><textarea [(ngModel)]="shipownerClauses[index]" [disabled]="!canEditClauses('shipowner')" [attr.aria-label]="'Shipowner clause ' + (index + 1)"></textarea></div> }</div>
+        <button class="secondary wide" [disabled]="!canEditClauses('shipowner')" (click)="addClause('shipowner')">+ ADD CLAUSE</button>
       </aside>
     </div>
     <div class="page-actions"><button class="secondary" disabled title="Not implemented yet">SAVE DRAFT</button><button class="primary" [disabled]="!canSend" (click)="sendCounter()">SEND COUNTER OFFER</button><button class="success" [disabled]="saving || loading || hasChanges" [routerLink]="['/offers', id, 'recap']" title="Send edited conditions before preparing recap">PREPARE RECAP</button></div>

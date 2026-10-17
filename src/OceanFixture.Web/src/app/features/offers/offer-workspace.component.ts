@@ -5,6 +5,7 @@ import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { catchError, of, switchMap } from 'rxjs';
 import { CargoOffer, Company, CreateCargoOfferRequest, VoyageTerms } from '../../core/models';
 import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
+import { SessionService } from '../../core/session.service';
 
 @Component({ selector: 'of-offer-workspace', standalone: true, imports: [FormsModule, RouterLink],
   templateUrl: './offer-workspace.component.html', styleUrl: './offer-workspace.component.scss' })
@@ -12,6 +13,7 @@ export class OfferWorkspaceComponent {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly api = inject(OceanFixtureApiService);
+  private readonly session = inject(SessionService);
   private readonly destroyRef = inject(DestroyRef);
   readonly isNew = this.route.snapshot.paramMap.get('id') === null;
   step = 1;
@@ -32,7 +34,7 @@ export class OfferWorkspaceComponent {
   };
 
   constructor() {
-    if (this.isNew) this.loadOwners();
+    if (this.isNew) { this.draft.terms.charterer = this.session.user()?.role === 'Charterer' ? this.session.user()!.companyName : 'Charterer One'; this.loadOwners(); }
     else this.route.paramMap.pipe(switchMap(params => {
       this.loading = true;
       this.offer = undefined;

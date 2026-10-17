@@ -8,6 +8,7 @@ public sealed class DemoStore
     public List<Company> Companies { get; } =
     [
         new(39, "Charterer One", "Charterer", "Spain", "A82303769"),
+        new(40, "Charterer Two", "Charterer", "Spain", "DEMO-40"),
         new(119, "Northstar Shipping", "Shipowner", "Germany", "A82303768"),
         new(120, "Baltic Meridian", "Shipowner", "Lithuania", "A82303767"),
         new(121, "Bluehaven Carriers", "Shipowner", "Spain", "A82303765"),
@@ -81,6 +82,7 @@ public sealed class DemoStore
         CreatedOn = DateOnly.ParseExact(createdOn, "yyyy-MM-dd"),
         CustomerReference = customerReference,
         Stage = stage,
+        SelectedShipownerId = stage is OfferStage.Negotiation or OfferStage.Operative ? 119 : null,
         Terms = new VoyageTerms
         {
             Charterer = "Charterer One",

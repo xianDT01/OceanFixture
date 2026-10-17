@@ -21,7 +21,7 @@ export class ComparativeComponent {
   loading = true;
   saving = false;
   error = '';
-  get canSelect(): boolean { return !this.loading && !this.saving && this.offer?.stage === 'CargoOrder' && !!this.offer.recapVersion; }
+  get canSelect(): boolean { return !this.loading && !this.saving && this.offer?.stage === 'CargoOrder' && !!this.offer.recapVersion && !!this.offer.permissions?.canSelectFirmOffer; }
   get bids(): ShipownerBid[] { return this.offer?.bids ?? []; }
 
   constructor() { this.reload(); }
