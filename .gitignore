@@ -10,3 +10,9 @@
 *.suo
 *.log
 *-preview.png
+**/App_Data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.db.lock

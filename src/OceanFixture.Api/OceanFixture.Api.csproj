@@ -1,6 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk.Web">
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Data.Sqlite" Version="8.0.32" />
     <ProjectReference Include="..\OceanFixture.Domain\OceanFixture.Domain.csproj" />
   </ItemGroup>
 

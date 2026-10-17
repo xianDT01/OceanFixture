@@ -4,6 +4,7 @@ namespace OceanFixture.Api.Data;
 
 public sealed class DemoStore
 {
+    private readonly IStatePersistence? persistence;
     public List<Company> Companies { get; } =
     [
         new(39, "Charterer One", "Charterer", "Spain", "A82303769"),
@@ -15,8 +16,16 @@ public sealed class DemoStore
 
     public List<CargoOffer> Offers { get; }
 
-    public DemoStore()
+    public DemoStore(IStatePersistence? persistence = null)
     {
+        this.persistence = persistence;
+        var saved = persistence?.Load();
+        if (saved is not null)
+        {
+            Companies = saved.Companies;
+            Offers = saved.Offers;
+            return;
+        }
         Offers =
         [
             CreateOffer(2957, "AUTOMATED TEST CARGO", OfferStage.CargoOrder, 5_000, "STEEL COILS", "", "", "", "2025-08-19"),
@@ -36,6 +45,34 @@ public sealed class DemoStore
             Bid(119, "Northstar Shipping", comparative.Terms with { Freight = 220_000, FreightCurrency = "EUR", VesselName = "EVER-OCEAN" })
         ]);
         Offers.Add(comparative);
+        persistence?.Save(new(Companies, Offers));
+    }
+
+    public StoredState Snapshot()
+    {
+        lock (this) return StateCodec.Clone(new(Companies, Offers));
+    }
+
+    public void Commit(Action update)
+    {
+        lock (this)
+        {
+            var before = persistence is null ? null : StateCodec.Clone(new(Companies, Offers));
+            try
+            {
+                update();
+                persistence?.Save(new(Companies, Offers));
+            }
+            catch (Exception error)
+            {
+                if (before is not null)
+                {
+                    Companies.Clear(); Companies.AddRange(before.Companies);
+                    Offers.Clear(); Offers.AddRange(before.Offers);
+                }
+                throw new PersistenceWriteException(error);
+            }
+        }
     }
 
     private static CargoOffer CreateOffer(int reference, string customerReference, OfferStage stage, decimal quantity, string commodity, string pol, string pod, string laycan, string createdOn) => new()

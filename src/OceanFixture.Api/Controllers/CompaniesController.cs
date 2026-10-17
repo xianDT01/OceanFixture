@@ -9,8 +9,10 @@ namespace OceanFixture.Api.Controllers;
 public sealed class CompaniesController(DemoStore store) : ControllerBase
 {
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<Company>> Get([FromQuery] string? type = null) => Ok(
-        string.IsNullOrWhiteSpace(type)
-            ? store.Companies
-            : store.Companies.Where(company => company.Type.Equals(type, StringComparison.OrdinalIgnoreCase)));
+    public ActionResult<IReadOnlyCollection<Company>> Get([FromQuery] string? type = null)
+    {
+        var companies = store.Snapshot().Companies;
+        return Ok(string.IsNullOrWhiteSpace(type) ? companies
+            : companies.Where(company => company.Type.Equals(type, StringComparison.OrdinalIgnoreCase)).ToList());
+    }
 }

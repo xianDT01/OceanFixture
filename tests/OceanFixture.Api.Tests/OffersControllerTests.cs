@@ -38,7 +38,7 @@ public sealed class OffersControllerTests
 
         Assert.Equal(2958, created.Reference);
         Assert.Equal("TEST-NEW", created.CustomerReference);
-        Assert.Contains(created, store.Offers);
+        Assert.Contains(store.Offers, offer => offer.Id == created.Id);
         Assert.Equal(OfferStage.CargoOrder, created.Stage);
         Assert.Equal([119], created.InvitedShipownerIds);
     }
@@ -302,7 +302,7 @@ public sealed class OffersControllerTests
         var result = controller.Create(ValidCargoRequest() with { InvitedShipownerIds = [119, 119, 120] });
         var created = Assert.IsType<CargoOffer>(Assert.IsType<CreatedAtActionResult>(result.Result).Value);
         Assert.Equal([119, 120], created.InvitedShipownerIds);
-        Assert.Contains(created, AssertOk(controller.Dashboard()).Single(lane => lane.Key == "CargoOrder").Offers);
+        Assert.Contains(AssertOk(controller.Dashboard()).Single(lane => lane.Key == "CargoOrder").Offers, offer => offer.Id == created.Id);
     }
 
     [Fact]

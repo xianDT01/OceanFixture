@@ -11,9 +11,19 @@ OceanFixture es una recreacion independiente de la plataforma estudiada, orienta
 - `OceanFixture.Storage.Api`: metadatos de documentos adjuntos.
 - `OceanFixture.Domain`: contratos y modelos de dominio compartidos.
 
-El estado actual incluye datos de demostracion en memoria. El dashboard puede mostrar datos locales si la API no esta levantada. El Recap requiere la API: muestra un error si no puede cargar o guardar, sin simular confirmaciones correctas.
+La API principal conserva empresas, cargas, ofertas, condiciones, clausulas y confirmaciones en SQLite local. Los datos de demostracion solo se crean en el primer arranque de una base vacia. El dashboard puede mostrar datos locales si la API no esta levantada. El Recap requiere la API: muestra un error si no puede cargar o guardar, sin simular confirmaciones correctas.
 
-El Recap carga las condiciones de cada oferta y registra las confirmaciones de ambas partes para la misma version. Una contraoferta invalida las confirmaciones anteriores; una confirmacion de una version desactualizada devuelve HTTP 409. Las confirmaciones sobreviven a recargar la pagina, pero se pierden al reiniciar la API. La identidad del firmante sigue siendo de demostracion: este flujo no constituye autenticacion ni firma legal de produccion.
+El Recap carga las condiciones de cada oferta y registra las confirmaciones de ambas partes para la misma version. Una contraoferta invalida las confirmaciones anteriores; una confirmacion de una version desactualizada devuelve HTTP 409. Las confirmaciones sobreviven tanto a recargar la pagina como a reiniciar la API. La identidad del firmante sigue siendo de demostracion: este flujo no constituye autenticacion ni firma legal de produccion.
+
+## Persistencia local
+
+- Por defecto, la base esta en `src/OceanFixture.Api/App_Data/oceanfixture.db`. La ruta se resuelve respecto al directorio de contenido de la API, no al directorio desde el que se ejecuta el comando.
+- Puede cambiarse con `Storage:DatabasePath` en la configuracion o la variable de entorno `Storage__DatabasePath`.
+- Cada cambio se guarda en una transaccion antes de devolver exito. Si falla la escritura, se restaura el estado anterior en memoria y la API devuelve HTTP 503.
+- La base, archivos auxiliares y su directorio estan excluidos de Git. Las capturas de referencia del original siguen fuera del repositorio.
+- Para una copia de seguridad local, apagar la API y copiar el archivo `.db` a una ubicacion segura. No editar ni eliminar la base en uso. No se incluye un boton de reinicio ni se sobreescriben datos existentes con datos demo.
+- Una base corrupta, inaccesible o con una version de esquema desconocida impide arrancar; no se borra ni reinicia automaticamente.
+- Esta primera implementacion guarda una instantanea JSON del estado en una tabla SQLite, con version de esquema. Esta orientada a una sola instancia local de la API; un bloqueo exclusivo impide abrir una segunda instancia sobre la misma base. Quedan pendientes el modelo relacional normalizado, migraciones, despliegue multi-instancia, autenticacion, permisos por empresa/rol y copias de seguridad automatizadas.
 
 ## Puesta en marcha
 
@@ -58,11 +68,11 @@ El dashboard incorpora un mapa geografico Leaflet con cartografia OpenStreetMap:
 
 ## Endpoints principales
 
-El alta de carga usa el catalogo de armadores aprobados, conserva los datos entre los tres pasos y guarda la orden mediante la API. La API valida referencia, fletador, descripcion, cantidad positiva, puertos, laycan y destinatarios; asigna la referencia y publica la orden en el dashboard. Los destinatarios quedan registrados, pero no se envian correos. El detalle de la orden requiere la API y permite continuar a la comparativa, negociacion o Recap segun su etapa. Los datos siguen en memoria y no hay autenticacion real.
+El alta de carga usa el catalogo de armadores aprobados, conserva los datos entre los tres pasos y guarda la orden mediante la API. La API valida referencia, fletador, descripcion, cantidad positiva, puertos, laycan y destinatarios; asigna la referencia y publica la orden en el dashboard. Los destinatarios quedan registrados, pero no se envian correos. El detalle de la orden requiere la API y permite continuar a la comparativa, negociacion o Recap segun su etapa. Los datos se conservan en SQLite local y no hay autenticacion real.
 
 La comparativa carga las ofertas de armadores desde la API, resalta diferencias y selecciona una oferta firm con control de version. Solo permite seleccionar mientras la operacion esta en CargoOrder; al guardar abre la negociacion con las condiciones del armador elegido. No reabre operaciones negociadas, operativas o archivadas. La referencia demo 2941 comienza en CargoOrder y contiene tres ofertas para probar este recorrido. Chat, notas, recordatorios y archivo de la comparativa siguen pendientes.
 
-La negociacion carga los datos de cada oferta desde la API y envia condiciones y clausulas con control de version. Si otra peticion cambia la oferta, el servidor rechaza el envio con HTTP 409; los cambios escritos se mantienen en pantalla. Preparar el Recap requiere enviar primero los cambios. Borradores, chat y documentos de esta pantalla siguen pendientes y sus botones estan deshabilitados. El almacenamiento y la identidad siguen siendo de demostracion.
+La negociacion carga los datos de cada oferta desde la API y envia condiciones y clausulas con control de version. Si otra peticion cambia la oferta, el servidor rechaza el envio con HTTP 409; los cambios escritos se mantienen en pantalla. Preparar el Recap requiere enviar primero los cambios. Borradores, chat y documentos de esta pantalla siguen pendientes y sus botones estan deshabilitados. El almacenamiento es local y la identidad sigue siendo de demostracion.
 
 - `GET /v1/api/offers/dashboard`
 - `GET /v1/api/offers`

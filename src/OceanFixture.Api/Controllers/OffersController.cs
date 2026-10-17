@@ -9,10 +9,13 @@ namespace OceanFixture.Api.Controllers;
 public sealed class OffersController(DemoStore store) : ControllerBase
 {
     [HttpGet]
-    public ActionResult<IReadOnlyCollection<CargoOffer>> GetAll() => Ok(store.Offers);
+    public ActionResult<IReadOnlyCollection<CargoOffer>> GetAll() => Ok(store.Snapshot().Offers);
 
     [HttpGet("dashboard")]
-    public ActionResult<IReadOnlyCollection<DashboardLane>> Dashboard() => Ok(
+    public ActionResult<IReadOnlyCollection<DashboardLane>> Dashboard()
+    {
+        var offers = store.Snapshot().Offers;
+        return Ok(
         Enum.GetValues<OfferStage>().Select(stage => new DashboardLane(
             stage.ToString(),
             stage switch
@@ -22,15 +25,16 @@ public sealed class OffersController(DemoStore store) : ControllerBase
                 OfferStage.Operative => "OPERATIVE",
                 _ => "ARCHIVE"
             },
-            store.Offers.Where(offer => offer.Stage == stage).ToArray())).ToArray());
+            offers.Where(offer => offer.Stage == stage).ToArray())).ToArray());
+    }
 
     [HttpGet("{id:guid}")]
     public ActionResult<CargoOffer> Get(Guid id) =>
-        store.Offers.FirstOrDefault(offer => offer.Id == id) is { } offer ? Ok(offer) : NotFound();
+        store.Snapshot().Offers.FirstOrDefault(offer => offer.Id == id) is { } offer ? Ok(offer) : NotFound();
 
     [HttpGet("{reference:int}")]
     public ActionResult<CargoOffer> GetByReference(int reference) =>
-        store.Offers.FirstOrDefault(offer => offer.Reference == reference) is { } offer ? Ok(offer) : NotFound();
+        store.Snapshot().Offers.FirstOrDefault(offer => offer.Reference == reference) is { } offer ? Ok(offer) : NotFound();
 
     [HttpPost]
     public ActionResult<CargoOffer> Create(CreateCargoOfferRequest request)
@@ -55,8 +59,8 @@ public sealed class OffersController(DemoStore store) : ControllerBase
                 Terms = terms,
                 InvitedShipownerIds = request.InvitedShipownerIds.Distinct().ToList()
             };
-            store.Offers.Add(created);
-            return CreatedAtAction(nameof(Get), new { id = created.Id }, created);
+            store.Commit(() => store.Offers.Add(created));
+            return CreatedAtAction(nameof(Get), new { id = created.Id }, SnapshotOffer(created));
         }
     }
 
@@ -72,12 +76,15 @@ public sealed class OffersController(DemoStore store) : ControllerBase
                 return Conflict(new { message = "The offer has changed. Reload before selecting." });
             if (offer.Stage != OfferStage.CargoOrder)
                 return BadRequest(new { message = "A firm offer can only be selected for a cargo order." });
-            offer.SelectedShipownerId = shipownerId;
-            offer.Terms = bid.Terms;
-            offer.Confirmations.Clear();
-            offer.Stage = OfferStage.Negotiation;
-            offer.NegotiationTurn = "Shipowner";
-            return Ok(offer);
+            store.Commit(() =>
+            {
+                offer.SelectedShipownerId = shipownerId;
+                offer.Terms = bid.Terms;
+                offer.Confirmations.Clear();
+                offer.Stage = OfferStage.Negotiation;
+                offer.NegotiationTurn = "Shipowner";
+            });
+            return Ok(SnapshotOffer(offer));
         }
     }
 
@@ -88,12 +95,8 @@ public sealed class OffersController(DemoStore store) : ControllerBase
         {
             var offer = store.Offers.FirstOrDefault(item => item.Id == id);
             if (offer is null) return NotFound();
-            offer.Terms = terms;
-            offer.Confirmations.Clear();
-            offer.Stage = OfferStage.Negotiation;
-            offer.Counter++;
-            offer.NegotiationTurn = offer.NegotiationTurn == "Charterer" ? "Shipowner" : "Charterer";
-            return Ok(offer);
+            store.Commit(() => ApplyCounter(offer, terms));
+            return Ok(SnapshotOffer(offer));
         }
     }
 
@@ -109,11 +112,15 @@ public sealed class OffersController(DemoStore store) : ControllerBase
             if (request.Terms is null || request.Terms.Quantity <= 0 || request.Terms.Freight < 0 || request.Terms.Demurrage < 0
                 || request.ChartererClauses is null || request.ShipownerClauses is null)
                 return BadRequest(new { message = "Valid terms and clauses are required." });
-            offer.ChartererClauses.Clear();
-            offer.ChartererClauses.AddRange(request.ChartererClauses);
-            offer.ShipownerClauses.Clear();
-            offer.ShipownerClauses.AddRange(request.ShipownerClauses);
-            return Counter(id, request.Terms);
+            store.Commit(() =>
+            {
+                offer.ChartererClauses.Clear();
+                offer.ChartererClauses.AddRange(request.ChartererClauses);
+                offer.ShipownerClauses.Clear();
+                offer.ShipownerClauses.AddRange(request.ShipownerClauses);
+                ApplyCounter(offer, request.Terms);
+            });
+            return Ok(SnapshotOffer(offer));
         }
     }
 
@@ -131,13 +138,26 @@ public sealed class OffersController(DemoStore store) : ControllerBase
                 return BadRequest(new { message = "A valid party and confirming user are required." });
             if (request.VersionHash != offer.RecapVersion)
                 return Conflict(new { message = "The recap has changed. Reload before confirming." });
-            offer.Confirmations.RemoveAll(item => item.Party.Equals(party, StringComparison.OrdinalIgnoreCase));
-            offer.Confirmations.Add(new(party, request.ConfirmedBy.Trim(), DateTimeOffset.UtcNow, offer.RecapVersion));
-            if (offer.Confirmations.Where(item => item.VersionHash == offer.RecapVersion)
-                .Select(item => item.Party.ToLowerInvariant()).Distinct().Count() == 2)
-                offer.Stage = OfferStage.Operative;
-            return Ok(offer);
+            store.Commit(() =>
+            {
+                offer.Confirmations.RemoveAll(item => item.Party.Equals(party, StringComparison.OrdinalIgnoreCase));
+                offer.Confirmations.Add(new(party, request.ConfirmedBy.Trim(), DateTimeOffset.UtcNow, offer.RecapVersion));
+                if (offer.Confirmations.Where(item => item.VersionHash == offer.RecapVersion)
+                    .Select(item => item.Party.ToLowerInvariant()).Distinct().Count() == 2)
+                    offer.Stage = OfferStage.Operative;
+            });
+            return Ok(SnapshotOffer(offer));
         }
+    }
+    private CargoOffer SnapshotOffer(CargoOffer offer) => store.Snapshot().Offers.Single(item => item.Id == offer.Id);
+
+    private static void ApplyCounter(CargoOffer offer, VoyageTerms terms)
+    {
+        offer.Terms = terms;
+        offer.Confirmations.Clear();
+        offer.Stage = OfferStage.Negotiation;
+        offer.Counter++;
+        offer.NegotiationTurn = offer.NegotiationTurn == "Charterer" ? "Shipowner" : "Charterer";
     }
 }
 
