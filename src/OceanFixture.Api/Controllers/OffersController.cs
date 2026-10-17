@@ -148,16 +148,24 @@ public sealed class OffersController(DemoStore store) : ControllerBase
             if (offer is null) return NotFound();
             if (offer.Stage != OfferStage.Negotiation) return BadRequest(new { message = "The offer is not in negotiation." });
             if (request.VersionHash != offer.RecapVersion) return Conflict(new { message = "The offer has changed. Reload before sending." });
+            // Recheck under the same lock as the write, not just in the access filter.
+            if (request.Party is not ("Charterer" or "Shipowner") || string.IsNullOrWhiteSpace(request.SubmittedBy)) return Forbid();
+            if (request.Party != offer.NegotiationTurn)
+                return Conflict(new { message = "It is the other party's turn. Reload before sending." });
             if (request.Terms is null || request.Terms.Quantity <= 0 || request.Terms.Freight < 0 || request.Terms.Demurrage < 0
                 || request.ChartererClauses is null || request.ShipownerClauses is null)
                 return BadRequest(new { message = "Valid terms and clauses are required." });
             store.Commit(() =>
             {
+                var before = new NegotiationSnapshot(offer.Terms, offer.ChartererClauses.ToArray(), offer.ShipownerClauses.ToArray());
                 offer.ChartererClauses.Clear();
                 offer.ChartererClauses.AddRange(request.ChartererClauses);
                 offer.ShipownerClauses.Clear();
                 offer.ShipownerClauses.AddRange(request.ShipownerClauses);
                 ApplyCounter(offer, request.Terms);
+                offer.NegotiationHistory.Add(new(Guid.NewGuid(), offer.Counter, request.Party, request.SubmittedBy,
+                    DateTimeOffset.UtcNow, before,
+                    new(offer.Terms, offer.ChartererClauses.ToArray(), offer.ShipownerClauses.ToArray())));
             });
             return Ok(SnapshotOffer(offer));
         }
@@ -203,5 +211,10 @@ public sealed class OffersController(DemoStore store) : ControllerBase
 public sealed record ConfirmRecapRequest(string Party, string? ConfirmedBy, string VersionHash);
 public sealed record CreateCargoOfferRequest(string CustomerReference, VoyageTerms Terms, int[] InvitedShipownerIds, int? ChartererCompanyId = null);
 public sealed record SelectFirmOfferRequest(string VersionHash);
-public sealed record NegotiatedCounterRequest(VoyageTerms Terms, string[] ChartererClauses, string[] ShipownerClauses, string VersionHash);
+public sealed record NegotiatedCounterRequest(VoyageTerms Terms, string[] ChartererClauses, string[] ShipownerClauses, string VersionHash)
+{
+    // These values are assigned by the access filter, never accepted from JSON.
+    [System.Text.Json.Serialization.JsonIgnore] public string? Party { get; init; }
+    [System.Text.Json.Serialization.JsonIgnore] public string? SubmittedBy { get; init; }
+}
 public sealed record SubmitBidRequest(VoyageTerms Terms, string VersionHash, int? ShipownerId = null);

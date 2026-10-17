@@ -30,17 +30,17 @@ Arrancar API en Development y Angular segun el [README](../README.md). Abrir `ht
 
 ## 4. Negociacion y Recap por partes
 
-1. Cargador y armador seleccionado pueden proponer cambios; cada uno solo modifica sus propias clausulas.
-2. Guardar las condiciones antes de preparar el Recap. Comprobar que los datos coinciden.
+1. Tras seleccionar la oferta, el turno debe ser del armador. Como cargador, comprobar el aviso de lectura y que condiciones, clausulas y envio estan deshabilitados. Cambiar al armador elegido, modificar condiciones y sus clausulas y enviar.
+2. Comprobar que el contador sube una unidad y el turno pasa al cargador; el armador no debe poder enviar otra vez. Entrar como cargador y refrescar. Enviar una respuesta modificando solo sus propias clausulas. Desplegar `COUNTER OFFER HISTORY`: deben figurar ambos envios, sus autores/fechas UTC y los valores antes/enviados. Guardar las condiciones antes de preparar el Recap y comprobar que coinciden.
 3. Como cargador, debe aparecer solo su boton de confirmacion. Confirmarlo no cierra todavia la operacion.
 4. Cambiar al armador seleccionado y confirmar su parte. La operacion debe pasar a Operative.
 5. Cambiar al administrador: puede consultar, pero no firmar por una u otra parte.
-6. El control obligatorio de turnos y el historial/aceptacion por campo todavia no estan implementados.
+6. La aceptacion individual por campo y los borradores todavia no estan implementados. El historial de operaciones antiguas puede estar vacio; no se reconstruye actividad anterior.
 
 ## 5. Persistencia y sesiones
 
 1. Apagar y reiniciar la API con la misma ruta de base de datos.
-2. Volver a elegir perfil: las sesiones anteriores deben caducar, pero la carga, propuestas, condiciones y confirmaciones deben conservarse.
+2. Volver a elegir perfil: las sesiones anteriores deben caducar, pero la carga, propuestas, condiciones, turnos, historial y confirmaciones deben conservarse.
 3. Crear otra carga: la nueva referencia no debe colisionar con las existentes ni duplicarse la semilla demo.
 
 ## 6. Casos negativos

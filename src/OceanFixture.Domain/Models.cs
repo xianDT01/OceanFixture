@@ -56,6 +56,10 @@ public sealed record RecapConfirmation(
     DateTimeOffset ConfirmedAt,
     string VersionHash);
 
+public sealed record NegotiationSnapshot(VoyageTerms Terms, string[] ChartererClauses, string[] ShipownerClauses);
+public sealed record NegotiationEntry(Guid Id, int Counter, string Party, string SubmittedBy,
+    DateTimeOffset SubmittedAt, NegotiationSnapshot Before, NegotiationSnapshot After);
+
 public sealed class CargoOffer
 {
     // Existing local demo snapshots belong to Charterer One (39).
@@ -92,6 +96,8 @@ public sealed class CargoOffer
     public List<string> ChartererClauses { get; init; } = [];
     public List<string> ShipownerClauses { get; init; } = [];
     public List<RecapConfirmation> Confirmations { get; init; } = [];
+    // Audit data is deliberately excluded from RecapVersion to preserve existing signatures.
+    public List<NegotiationEntry> NegotiationHistory { get; init; } = [];
 }
 
 public sealed record DashboardLane(string Key, string Label, IReadOnlyCollection<CargoOffer> Offers);

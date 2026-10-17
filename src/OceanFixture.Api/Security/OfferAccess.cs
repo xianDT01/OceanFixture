@@ -18,7 +18,8 @@ public sealed class OfferAccess(ClaimsPrincipal user)
             ? offer.InvitedShipownerIds.Contains(CompanyId!.Value) : IsSelectedOwner(offer)));
     public OfferPermissions Permissions(CargoOffer offer) => new(
         (IsAdmin || OwnsCargo(offer)) && offer.Stage == OfferStage.CargoOrder,
-        (OwnsCargo(offer) || IsSelectedOwner(offer)) && offer.Stage == OfferStage.Negotiation,
+        ((OwnsCargo(offer) && offer.NegotiationTurn == "Charterer")
+            || (IsSelectedOwner(offer) && offer.NegotiationTurn == "Shipowner")) && offer.Stage == OfferStage.Negotiation,
         OwnsCargo(offer) && offer.Stage == OfferStage.Negotiation,
         IsSelectedOwner(offer) && offer.Stage == OfferStage.Negotiation,
         OwnsCargo(offer), IsSelectedOwner(offer),

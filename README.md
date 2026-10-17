@@ -100,6 +100,8 @@ La comparativa carga las ofertas de armadores desde la API, resalta diferencias 
 
 La negociacion carga los datos de cada oferta desde la API y envia condiciones y clausulas con control de version. Si otra peticion cambia la oferta, el servidor rechaza el envio con HTTP 409; los cambios escritos se mantienen en pantalla. Preparar el Recap requiere enviar primero los cambios. Borradores, chat y documentos de esta pantalla siguen pendientes y sus botones estan deshabilitados. El almacenamiento es local y la identidad sigue siendo de demostracion.
 
+Los turnos son obligatorios: tras seleccionar la oferta comienza el armador y cada contraoferta cambia el turno. Los permisos de la API dejan la pantalla en lectura al otro participante y al administrador. Cada envio guarda historial con autor de la sesion, fecha UTC y condiciones/clausulas antes y despues; se consulta desplegando `COUNTER OFFER HISTORY`. No se inventa historial para acciones anteriores a esta funcion. El historial se conserva en SQLite, pero no es una auditoria inalterable. Confirmar la version vigente del Recap sigue permitido a cada parte independientemente del turno.
+
 - `GET /v1/api/offers/dashboard`
 - `GET /v1/api/offers`
 - `GET /v1/api/offers/{id}`

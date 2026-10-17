@@ -64,6 +64,11 @@ public sealed class OfferAccessFilter(DemoStore store) : IAsyncActionFilter
                     && ((!permissions.CanEditChartererClauses && !request.ChartererClauses.SequenceEqual(offer.ChartererClauses))
                         || (!permissions.CanEditShipownerClauses && !request.ShipownerClauses.SequenceEqual(offer.ShipownerClauses))))
                 { context.Result = new ForbidResult(); return; }
+                context.ActionArguments["request"] = request with
+                {
+                    Party = access.Role,
+                    SubmittedBy = context.HttpContext.User.FindFirstValue(ClaimTypes.NameIdentifier)
+                };
             }
             if (action == nameof(OffersController.ConfirmRecap))
             {

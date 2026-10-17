@@ -145,7 +145,7 @@ public sealed class OffersControllerTests
         var version = offer.RecapVersion;
         controller.ConfirmRecap(offer.Id, new("charterer", "Alice", version));
         var updated = AssertOk(controller.SendNegotiatedCounter(offer.Id,
-            new(offer.Terms with { Freight = 120000 }, ["Charterer clause"], ["Owner clause"], version)));
+            new(offer.Terms with { Freight = 120000 }, ["Charterer clause"], ["Owner clause"], version) { Party = offer.NegotiationTurn, SubmittedBy = "Alice" }));
         Assert.Equal(120000, updated.Terms.Freight);
         Assert.Equal("Charterer clause", Assert.Single(updated.ChartererClauses));
         Assert.Equal("Owner clause", Assert.Single(updated.ShipownerClauses));
@@ -160,7 +160,7 @@ public sealed class OffersControllerTests
         var store = new DemoStore();
         var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
         var controller = new OffersController(store);
-        var request = new NegotiatedCounterRequest(offer.Terms, ["Clause"], [], offer.RecapVersion);
+        var request = new NegotiatedCounterRequest(offer.Terms, ["Clause"], [], offer.RecapVersion) { Party = offer.NegotiationTurn, SubmittedBy = "Alice" };
         AssertOk(controller.SendNegotiatedCounter(offer.Id, request));
         Assert.IsType<ConflictObjectResult>(controller.SendNegotiatedCounter(offer.Id, request).Result);
         Assert.Equal(1, offer.Counter);
@@ -173,7 +173,7 @@ public sealed class OffersControllerTests
         var offer = store.Offers.First(item => item.Stage == OfferStage.Negotiation);
         var original = offer.Terms;
         var result = new OffersController(store).SendNegotiatedCounter(offer.Id,
-            new(original with { Quantity = 0 }, ["Invalid update"], [], offer.RecapVersion));
+            new(original with { Quantity = 0 }, ["Invalid update"], [], offer.RecapVersion) { Party = offer.NegotiationTurn, SubmittedBy = "Alice" });
         Assert.IsType<BadRequestObjectResult>(result.Result);
         Assert.Same(original, offer.Terms);
         Assert.Empty(offer.ChartererClauses);

@@ -1,14 +1,15 @@
 import { Component, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { DatePipe } from '@angular/common';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { CargoOffer, VoyageTerms } from '../../core/models';
+import { CargoOffer, NegotiationEntry, VoyageTerms } from '../../core/models';
 import { OceanFixtureApiService } from '../../core/ocean-fixture-api.service';
 
 interface NegotiationRow { key: keyof VoyageTerms; label: string; original: string; value: string; multiline?: boolean; }
 
 @Component({
-  selector: 'of-negotiation', standalone: true, imports: [FormsModule, RouterLink],
+  selector: 'of-negotiation', standalone: true, imports: [FormsModule, RouterLink, DatePipe],
   templateUrl: './negotiation.component.html', styleUrl: './negotiation.component.scss'
 })
 export class NegotiationComponent {
@@ -26,6 +27,13 @@ export class NegotiationComponent {
   shipownerClauses: string[] = [];
   get counter(): number { return this.offer?.counter ?? 0; }
   get turn(): string { return this.offer?.negotiationTurn ?? ''; }
+  get history(): NegotiationEntry[] { return [...(this.offer?.negotiationHistory ?? [])].reverse(); }
+  historyRows(entry: NegotiationEntry): { label: string; before: string; after: string }[] {
+    return (Object.keys(entry.after.terms) as (keyof VoyageTerms)[]).map(key => ({
+      label: key.replace(/([A-Z])/g, ' $1').toUpperCase(),
+      before: String(entry.before.terms[key] ?? ''), after: String(entry.after.terms[key] ?? '')
+    }));
+  }
   get hasChanges(): boolean {
     return !!this.offer && (this.rows.some(row => row.value !== String(this.offer!.terms[row.key] ?? ''))
       || JSON.stringify(this.chartererClauses) !== JSON.stringify(this.offer.chartererClauses ?? [])
@@ -38,6 +46,7 @@ export class NegotiationComponent {
   constructor() { this.reload(); }
 
   reload(): void {
+    if (this.saving) return;
     this.loading = true;
     this.error = '';
     this.message = '';
@@ -84,7 +93,8 @@ export class NegotiationComponent {
       .pipe(takeUntilDestroyed(this.destroyRef)).subscribe({
         next: offer => { this.loadOffer(offer); this.saving = false; this.message = 'Counter offer saved.'; },
         error: response => { this.saving = false; this.error = response.status === 409
-          ? 'The offer has changed. Reload before sending.' : 'Counter offer was not saved. Please try again.'; }
+          ? 'The offer or negotiation turn has changed. Reload before sending.' : response.status === 403
+          ? 'You cannot send on this turn. Reload to check the current negotiation.' : 'Counter offer was not saved. Please try again.'; }
       });
   }
 

@@ -63,7 +63,7 @@ public sealed class PersistenceTests : IDisposable
             Assert.Equal(120, offer.SelectedShipownerId);
             Assert.Equal(195000, offer.Terms.Freight);
             var updated = AssertOk(new OffersController(store).SendNegotiatedCounter(id,
-                new(offer.Terms with { Freight = 190000 }, ["Charterer clause"], ["Owner clause"], offer.RecapVersion)));
+                new(offer.Terms with { Freight = 190000 }, ["Charterer clause"], ["Owner clause"], offer.RecapVersion) { Party = offer.NegotiationTurn, SubmittedBy = "Bob" }));
             return updated.RecapVersion;
         });
         WithStore(store =>
@@ -71,6 +71,11 @@ public sealed class PersistenceTests : IDisposable
             var offer = store.Offers.Single(item => item.Id == id);
             Assert.Equal(version, offer.RecapVersion);
             Assert.Equal(1, offer.Counter);
+            var history = Assert.Single(offer.NegotiationHistory);
+            Assert.Equal("Shipowner", history.Party);
+            Assert.Equal("Bob", history.SubmittedBy);
+            Assert.Equal(195000, history.Before.Terms.Freight);
+            Assert.Equal(190000, history.After.Terms.Freight);
             Assert.Equal("Charterer clause", Assert.Single(offer.ChartererClauses));
             Assert.Equal("Owner clause", Assert.Single(offer.ShipownerClauses));
             AssertOk(new OffersController(store).ConfirmRecap(id, new("charterer", "Alice", version)));
@@ -108,7 +113,7 @@ public sealed class PersistenceTests : IDisposable
             var controller = new OffersController(store);
             AssertOk(controller.ConfirmRecap(offer.Id, new("charterer", "Alice", offer.RecapVersion)));
             AssertOk(controller.SendNegotiatedCounter(offer.Id,
-                new(offer.Terms with { Freight = 100 }, [], [], offer.RecapVersion)));
+                new(offer.Terms with { Freight = 100 }, [], [], offer.RecapVersion) { Party = offer.NegotiationTurn, SubmittedBy = "Alice" }));
             return true;
         });
         Assert.Empty(WithStore(store => store.Offers.Single(item => item.Reference == 2942).Confirmations));
@@ -143,7 +148,7 @@ public sealed class PersistenceTests : IDisposable
                 case "counter": controller.Counter(offer.Id, offer.Terms with { Freight = 100 }); break;
                 case "negotiated-counter":
                     controller.SendNegotiatedCounter(offer.Id,
-                    new(offer.Terms with { Freight = 100 }, ["Changed clause"], [], offer.RecapVersion)); break;
+                    new(offer.Terms with { Freight = 100 }, ["Changed clause"], [], offer.RecapVersion) { Party = offer.NegotiationTurn, SubmittedBy = "Alice" }); break;
                 default: controller.ConfirmRecap(offer.Id, new("shipowner", "Bob", offer.RecapVersion)); break;
             }
         });

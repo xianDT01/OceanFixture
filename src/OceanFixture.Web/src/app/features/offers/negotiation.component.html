@@ -6,6 +6,9 @@
   @if (offer; as current) {
   <section class="page-body" [attr.aria-busy]="saving">
     <div class="negotiation-head"><div><span>COUNTER {{ counter }}</span><h2>{{ current.customerReference }}</h2><p>{{ current.terms.charterer }}</p></div><div class="turn-badge"><small>SHIFT</small><b>{{ turn }}</b></div></div>
+    @if (current.stage === 'Negotiation' && !current.permissions?.canSendCounter) {
+      <p class="turn-notice" role="status">Read-only. Current turn: {{ turn }}. <button (click)="reload()" [disabled]="saving || loading">REFRESH</button></p>
+    }
     <div class="negotiation-layout">
       <div>
         <div class="reference-strip"><span>NR.</span><b>REFERENCE</b><strong>{{ current.reference }}</strong></div>
@@ -24,6 +27,19 @@
         <button class="secondary wide" [disabled]="!canEditClauses('shipowner')" (click)="addClause('shipowner')">+ ADD CLAUSE</button>
       </aside>
     </div>
+    <details class="negotiation-history">
+      <summary>COUNTER OFFER HISTORY ({{ history.length }})</summary>
+      @for (entry of history; track entry.id) {
+        <details>
+          <summary>COUNTER {{ entry.counter }} &middot; {{ entry.party }} &middot; {{ entry.submittedAt | date:'dd/MM/yyyy HH:mm':'UTC' }} UTC &middot; {{ entry.submittedBy }}</summary>
+          <div class="history-scroll"><table><thead><tr><th>CONDITION</th><th>BEFORE</th><th>SENT</th></tr></thead><tbody>
+            @for (row of historyRows(entry); track row.label) { <tr [class.changed]="row.before !== row.after"><th>{{ row.label }}</th><td>{{ row.before || '—' }}</td><td>{{ row.after || '—' }}</td></tr> }
+            <tr><th>CHARTERER'S CLAUSES</th><td>{{ entry.before.chartererClauses.join('\n') || '—' }}</td><td>{{ entry.after.chartererClauses.join('\n') || '—' }}</td></tr>
+            <tr><th>SHIPOWNER'S CLAUSES</th><td>{{ entry.before.shipownerClauses.join('\n') || '—' }}</td><td>{{ entry.after.shipownerClauses.join('\n') || '—' }}</td></tr>
+          </tbody></table></div>
+        </details>
+      } @empty { <p>No recorded counter offers. Earlier demo activity has not been reconstructed.</p> }
+    </details>
     <div class="page-actions"><button class="secondary" disabled title="Not implemented yet">SAVE DRAFT</button><button class="primary" [disabled]="!canSend" (click)="sendCounter()">SEND COUNTER OFFER</button><button class="success" [disabled]="saving || loading || hasChanges" [routerLink]="['/offers', id, 'recap']" title="Send edited conditions before preparing recap">PREPARE RECAP</button></div>
   </section>
   }

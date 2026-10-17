@@ -87,4 +87,42 @@ describe('Negotiation API workflow', () => {
     expect(component.error).toContain('Unable to load');
     expect(api.sendCounter).not.toHaveBeenCalled();
   });
+
+  it('disables edits and sending while waiting for the other party', async () => {
+    offer.permissions!.canSendCounter = false;
+    offer.negotiationTurn = 'Shipowner';
+    const fixture = TestBed.createComponent(NegotiationComponent);
+    fixture.detectChanges();
+    await fixture.whenStable();
+    fixture.detectChanges();
+    expect(fixture.nativeElement.querySelector('.turn-notice').textContent).toContain('Shipowner');
+    expect(fixture.nativeElement.querySelector('input').disabled).toBeTrue();
+    fixture.componentInstance.sendCounter();
+    fixture.componentInstance.addClause('charterer');
+    expect(api.sendCounter).not.toHaveBeenCalled();
+    expect(fixture.componentInstance.chartererClauses).toEqual(['Existing clause']);
+  });
+
+  it('renders saved history with before and sent terms and safe text', () => {
+    offer.negotiationHistory = [{ id: 'event', counter: 2, party: 'Charterer', submittedBy: 'server-user',
+      submittedAt: '2026-10-17T12:00:00Z', before: { terms: { ...offer.terms, freight: 100 }, chartererClauses: [], shipownerClauses: [] },
+      after: { terms: { ...offer.terms, freight: 200 }, chartererClauses: ['<b>clause</b>'], shipownerClauses: [] } }];
+    const fixture = TestBed.createComponent(NegotiationComponent);
+    fixture.detectChanges();
+    const history = fixture.nativeElement.querySelector('.negotiation-history');
+    expect(history.textContent).toContain('COUNTER OFFER HISTORY (1)');
+    expect(history.textContent).toContain('server-user');
+    expect(history.textContent).toContain('17/10/2026 12:00 UTC');
+    expect(history.textContent).toContain('<b>clause</b>');
+    expect(history.querySelector('.changed').textContent).toContain('100');
+    expect(history.querySelector('.changed').textContent).toContain('200');
+  });
+
+  it('does not reload over an in-flight save', () => {
+    api.sendCounter.and.returnValue(new Subject<CargoOffer>());
+    const component = TestBed.createComponent(NegotiationComponent).componentInstance;
+    component.sendCounter();
+    component.reload();
+    expect(api.recap).toHaveBeenCalledTimes(1);
+  });
 });

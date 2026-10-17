@@ -15,7 +15,7 @@ Recrear el flujo de gestion de embarques de la plataforma original, conservando 
 | Alta de carga | Tres pasos, catalogo de armadores, validacion, referencia del servidor y persistencia | No envia correos; borradores pendientes |
 | Ofertas del armador | Envio y actualizacion de la propia oferta para una carga abierta e invitada | Solo se conserva la oferta vigente; faltan historial, declinacion y fechas limite |
 | Comparativa | Datos de la API, diferencias entre propuestas y seleccion del armador | Recordatorios, cancelacion, archivo, chat y notas |
-| Negociacion | Condiciones, clausulas propias, contraofertas y control de version | Turnos obligatorios, historial/aceptacion por campo y borradores |
+| Negociacion | Condiciones, clausulas propias, contraofertas, control de version, turnos obligatorios e historial persistente | Aceptacion por campo, borradores y auditoria inalterable |
 | Recap | Doble confirmacion de la misma version, firmante de la sesion y conservacion tras reinicio | Identidad verificada, firma contractual de produccion, comision y auditoria inalterable |
 | Roles | Permisos de cargador, armador y administrador aplicados en API e interfaz | Administracion completa de usuarios, empresas y membresias |
 | Persistencia | SQLite local con transacciones y recuperacion ante fallo de escritura | Modelo relacional normalizado, migraciones, varias instancias y copias automaticas |
@@ -38,6 +38,12 @@ Se exige carga abierta, invitacion, empresa aprobada, cantidad y flete positivos
 
 La version es global a la operacion: otra respuesta puede hacer que un formulario abierto devuelva 409. En ese caso no se guarda y se conservan los cambios escritos. Recargar es una accion explicita que descarta esos cambios. Esta primera pantalla reutiliza los estilos de la maqueta; su fidelidad exacta al formulario original del armador queda pendiente de contrastar.
 
+## Turnos e historial de negociacion
+
+Seleccionar una oferta firm deja el primer turno al armador elegido. Cada contraoferta aceptada alterna el turno; solo el cargador propietario o el armador seleccionado pueden enviar cuando les corresponde. El administrador consulta sin negociar por las partes. El servidor comprueba permisos, version y turno; el turno se vuelve a comprobar bajo el bloqueo de escritura. En espera, la pantalla muestra los datos en lectura y permite refrescar. La confirmacion del Recap no exige tener el turno: cada parte puede aceptar la version vigente.
+
+Cada nueva contraoferta guarda numero, autor de la sesion, parte, fecha UTC y una copia de todas las condiciones y clausulas anteriores/enviadas. El historial desplegable muestra los valores y resalta las condiciones modificadas. Se conserva en SQLite y se revierte junto con la operacion si falla la escritura. No se reconstruyen acciones demo antiguas ni revisiones previas de propuestas iniciales; tampoco hay todavia aceptacion por campo. Es un registro local, no una auditoria a prueba de manipulaciones. Anadir el historial no invalida confirmaciones existentes.
+
 ## Seguimiento maritimo: alcance acordado
 
 Las referencias aportadas por el usuario muestran un mapa asociado al embarque, un panel del buque y una pantalla Operative con comunicaciones y Recap. No debe considerarse terminado con el simple mapa geografico.
@@ -58,4 +64,4 @@ El entorno original no respondio al intento de revision del 16/10/2026. Las zona
 
 ## Siguientes incrementos
 
-Completar turnos e historial de negociacion, administracion/perfiles y clausulas reutilizables; despues comunicaciones/documentos y operativa del embarque. La identidad de produccion, el modelo de datos definitivo y la comprobacion visual siguen siendo tareas transversales. El orden puede ajustarse segun dependencias y referencias disponibles.
+Completar aceptacion por campo y borradores de negociacion, administracion/perfiles y clausulas reutilizables; despues comunicaciones/documentos y operativa del embarque. La identidad de produccion, el modelo de datos definitivo y la comprobacion visual siguen siendo tareas transversales. El orden puede ajustarse segun dependencias y referencias disponibles.

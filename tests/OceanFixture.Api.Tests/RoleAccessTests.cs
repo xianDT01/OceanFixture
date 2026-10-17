@@ -133,6 +133,25 @@ public sealed class RoleAccessTests
     }
 
     [Fact]
+    public async Task Filter_assigns_counter_actor_and_blocks_wrong_turn()
+    {
+        var store = new DemoStore();
+        var offer = store.Offers.Single(item => item.Reference == 2942);
+        var request = new NegotiatedCounterRequest(offer.Terms, [], [], offer.RecapVersion)
+        { Party = "Shipowner", SubmittedBy = "forged" };
+        var allowed = await RunFilter(store, User("Charterer", 39), nameof(OffersController.SendNegotiatedCounter),
+            new() { ["id"] = offer.Id, ["request"] = request });
+        Assert.True(allowed.Executed);
+        var bound = Assert.IsType<NegotiatedCounterRequest>(allowed.Context.ActionArguments["request"]);
+        Assert.Equal("Charterer", bound.Party);
+        Assert.Equal("server-user", bound.SubmittedBy);
+        var denied = await RunFilter(store, User("Shipowner", 119), nameof(OffersController.SendNegotiatedCounter),
+            new() { ["id"] = offer.Id, ["request"] = request });
+        Assert.False(denied.Executed);
+        Assert.IsType<ForbidResult>(denied.Context.Result);
+    }
+
+    [Fact]
     public async Task Filter_blocks_modifying_counterparty_clauses()
     {
         var store = new DemoStore();

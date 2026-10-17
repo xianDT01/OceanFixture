@@ -45,3 +45,11 @@ OceanFixture usa Angular 17 y ASP.NET Core 8, con servicios separados para API p
 - Validacion, control de version y transaccion SQLite tambien en este flujo. Los errores no se presentan como envios correctos.
 - Se incorporan documentos separados de estado funcional y pruebas manuales, enlazados desde el README. En cada incremento se actualizaran las funciones afectadas, limites y verificaciones realizadas.
 - Verificacion del hito: 97 tests backend, 60 frontend, compilaciones .NET/Angular y prueba HTTP de carga nueva -> dos propuestas independientes -> actualizacion propia -> seleccion -> Recap confirmado por ambas partes. Hay pruebas de persistencia y fallo de escritura para las propuestas. No equivale a validar todas las pantallas originales ni el uso de produccion.
+
+## 17/10/2026: turnos e historial de contraofertas
+
+- El permiso de envio depende del turno ademas del rol, empresa y etapa. Tras seleccionar una oferta empieza el armador; cada envio aceptado alterna el turno. El servidor vuelve a comprobarlo dentro del bloqueo de escritura. El administrador no negocia por las partes.
+- Registro persistente de cada nueva contraoferta: numero, parte, identidad tomada de la sesion, fecha UTC y copias completas de condiciones/clausulas antes y despues. La identidad enviada por JSON se ignora.
+- Historial desplegable en la pantalla existente, con condiciones cambiadas resaltadas, fechas UTC y textos escapados. Aviso de lectura y refresco mientras corresponde responder a la contraparte. Sin rediseno ni publicacion en Sites.
+- El historial no cambia el calculo de version contractual, para no invalidar confirmaciones existentes al cargar bases antiguas. No se inventa historial anterior ni se presenta el registro local como auditoria inalterable. Aceptacion por campo y borradores siguen pendientes.
+- Verificacion: 103 tests backend y 63 frontend, compilaciones .NET/Angular y recorrido HTTP con seleccion, dos turnos alternos, rechazo de repeticion con version vigente, identidad falsificada ignorada, valores historicos y doble confirmacion del Recap. Las pruebas de SQLite cubren conservacion del historial entre reinicios y rollback al fallar la escritura. La comprobacion de interfaz usa pruebas de componentes en Chrome, no una comparacion visual completa con el original.
